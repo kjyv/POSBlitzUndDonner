@@ -37,7 +37,7 @@ class Parser
 	{
 		tokens = new Vector<String>();
 		tags = new Vector<String>();
-		p = Pattern.compile("(\\S+)/([^/\\s]+)\\s");
+		p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");	// token/tag(-suffix)?
 	}
 }
 

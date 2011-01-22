@@ -35,16 +35,21 @@ class HMM
 				//TODO: maybe stop adding to ngram if senetence end?
 			} else{
 				//we have another full ngram, create a new state or add to existing
-				List<String> ngram_tags = tags.subList(i-2, i);
+				List<String> ngram_tags = tags.subList(i-2, i+1);
 				HMMState state = graph.get(assignment5.join(ngram_tags, " "));
 				
 				if(state == null) {
+					System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# not found");
 					//create new state
 					state = new HMMState();
-					state.tags = (Vector<String>) tags;
+					state.tags = new Vector<String>(ngram_tags);
 
 					state.probabilities = new HashMap<Vector<String>, Double>();
 					graph.put(assignment5.join(state.tags, " "), state);
+				}
+				else
+				{
+					System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# found");
 				}
 
 				//add absolute probability

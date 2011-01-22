@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class assignment5
 {
@@ -8,6 +10,13 @@ class assignment5
 	
 	public static void main(String[] args)
 	{
+		/*
+		Pattern p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");
+		Matcher m = p.matcher("token/np ");
+		System.out.println(m.find());
+		System.out.println(m.group(1)+ "#" + m.group(2) + "#" + m.group(3));
+		*/
+		
 		if(args[0].equals("learn"))
 		{
 			CrossValidator cv;
