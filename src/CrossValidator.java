@@ -51,6 +51,51 @@ class CrossValidator
 		}
 	}
 	
+	public HMM learn() throws UnsupportedOperationException
+	{
+		if(trainFolds == null || trainFolds.size() == 0)
+			throw new UnsupportedOperationException("no training folds. you have to call createFolds() first");
+		// join all training folds into one string to be parsed
+		StringBuilder trainString = new StringBuilder(20000*trainFolds.size());	// 20000 chars per fold
+		for(int i = 0; i < trainFolds.size(); i++)
+		{
+			trainString.append(trainFolds.get(i));
+		}
+		Parser p = new Parser(trainString.toString());
+		Vector<String> tokens = p.getTokens(), tags = p.getTags();
+		HMM hmm = new HMM();
+		hmm.train(tokens, tags);
+		return hmm;
+	}
+	
+	// returns the accuracy (= percentage of correct tags)
+	public CrossValidation evaluate(HMM hmm)
+	{
+		if(testFolds == null || testFolds.size() == 0)
+			throw new UnsupportedOperationException("no test folds. you have to call createFolds() first");
+		StringBuilder testString = new StringBuilder(20000*testFolds.size());	// 20000 chars per fold
+		for(int i = 0; i < testFolds.size(); i++)
+		{
+			testString.append(testFolds.get(i));
+		}
+		Parser p = new Parser(testString.toString());
+		Vector<String> tokens = p.getTokens(), tagsTrue = p.getTags();
+		Vector<String> tagsDecoded = hmm.decode(tokens);
+		
+		double accuracy = 0;
+		int numSentences = 0;
+		for(int i = 0; i < tagsDecoded.size(); i++)
+		{
+			String tagTrue = tagsTrue.get(i);
+			if(tagsDecoded.get(i).equals(tagTrue))
+				accuracy++;
+			if(tagTrue.equals("."))
+				numSentences++;
+		}
+		accuracy = accuracy / tagsDecoded.size();
+		return new CrossValidation(accuracy, numSentences);
+	}
+	
 	private static String readFileAsString(File filePath) throws java.io.IOException
 	{
         StringBuffer fileData = new StringBuffer(1000);
@@ -66,11 +111,6 @@ class CrossValidator
         reader.close();
         return fileData.toString();
     }
-	
-	public HMM learn() throws UnsupportedOperationException
-	{
-		if(trainFolds == null || trainFolds.size() == 0)
-			throw new UnsupportedOperationException("no training folds. you have to call createFolds() first");
-		return null;
-	}
 }
+
+

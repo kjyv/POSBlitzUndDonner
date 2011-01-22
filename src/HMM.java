@@ -43,17 +43,16 @@ class HMM
 					state = new HMMState();
 					state.tags = (Vector<String>) tags;
 
-					state.probabilities = new HashMap<String[], Double>();
+					state.probabilities = new HashMap<Vector<String>, Double>();
 					graph.put(assignment5.join(state.tags, " "), state);
 				}
 
 				//add absolute probability
-				String[] ngramStringArr = (String[]) ngram.toArray();
-				Double prob = state.probabilities.get(ngramStringArr);
+				Double prob = state.probabilities.get(ngram);
 				if(prob != null){
 					prob++;
 				} else {
-					state.probabilities.put(ngramStringArr, new Double(1));
+					state.probabilities.put(ngram, new Double(1));
 				}
 
 				//add or update edge to this state
@@ -79,7 +78,7 @@ class HMM
 			HMMState state = graph.get(key);
 			
 			int total_emissions = state.probabilities.size();
-			for (String[] p_key : state.probabilities.keySet()){
+			for (Vector<String> p_key : state.probabilities.keySet()){
 				Double p = state.probabilities.get(p_key);
 				p /= total_emissions;
 			}
@@ -100,6 +99,6 @@ class HMM
 		
 	}
 	
-	public void decode(Vector<String> tokens){}
+	public Vector<String> decode(Vector<String> tokens){return null;}
 	public void serialize(){}
 }

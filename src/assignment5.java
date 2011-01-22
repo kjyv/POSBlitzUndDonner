@@ -8,11 +8,23 @@ class assignment5
 	
 	public static void main(String[] args)
 	{
-		try {
-			CrossValidator cv = new CrossValidator("../assignment5/brown_learn");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(args[0].equals("learn"))
+		{
+			CrossValidator cv;
+			try {
+				cv = new CrossValidator(args[1]);
+				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
+				{
+					HMM hmm = cv.learn();
+					CrossValidation validated = cv.evaluate(hmm);
+					System.out.println("Fold " + (foldIndex+1) + ", " + validated.numSentences + " sentences, accuracy " + validated.accuracy);
+					cv.createFolds(args[1]);	// choose randomly from training set to obtain training and test files
+				}
+				// TODO: mean / stdev
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
