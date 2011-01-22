@@ -35,11 +35,11 @@ class HMM
 				//TODO: maybe stop adding to ngram if senetence end?
 			} else{
 				//we have another full ngram, create a new state or add to existing
-				List<String> ngram_tags = tags.subList(i-2, i+1);
+				List<String> ngram_tags = tags.subList(i-(assignment5.ngram_length-1), i+1);
 				HMMState state = graph.get(assignment5.join(ngram_tags, " "));
 				
 				if(state == null) {
-					System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# not found");
+					///System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# not found");
 					//create new state
 					state = new HMMState();
 					state.tags = new Vector<String>(ngram_tags);
@@ -49,7 +49,7 @@ class HMM
 				}
 				else
 				{
-					System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# found");
+					//System.out.println("state #"+assignment5.join(ngram_tags, " ") +"# found");
 				}
 
 				//add absolute probability
@@ -83,8 +83,13 @@ class HMM
 			HMMState state = graph.get(key);
 			
 			int total_emissions = state.probabilities.size();
+			System.out.println("state " + assignment5.join(state.tags, "#") +  " has " +total_emissions + " emissions");
 			for (Vector<String> p_key : state.probabilities.keySet()){
 				Double p = state.probabilities.get(p_key);
+				if(p==null)
+				{
+					System.out.println("p is null for key " + assignment5.join(p_key, "#"));
+				}
 				p /= total_emissions;
 			}
 

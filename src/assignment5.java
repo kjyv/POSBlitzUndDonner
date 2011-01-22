@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 class assignment5
 {
-	static int ngram_length = 3;
+	static int ngram_length = 2;
 	
 	public static void main(String[] args)
 	{
@@ -25,6 +25,7 @@ class assignment5
 				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
 				{
 					HMM hmm = cv.learn();
+					System.out.println("number of hmm states: " + hmm.graph.size());
 					CrossValidation validated = cv.evaluate(hmm);
 					System.out.println("Fold " + (foldIndex+1) + ", " + validated.numSentences + " sentences, accuracy " + validated.accuracy);
 					cv.createFolds(args[1]);	// choose randomly from training set to obtain training and test files
