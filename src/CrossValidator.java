@@ -41,6 +41,7 @@ class CrossValidator
 		// permutatedIndices are now randomly permuted
 		// 10 fold cross validation => use last 10% for testing
 		int lastTrainIndex = (int)Math.round(0.9*(numFiles-1));
+		System.out.println(lastTrainIndex);
 		for(int trainIndex = 0; trainIndex <= lastTrainIndex; trainIndex++)
 		{
 			trainFolds.add(readFileAsString(annotatedFiles[permutatedIndices.get(trainIndex)]));
@@ -72,7 +73,7 @@ class CrossValidator
 	public CrossValidation evaluate(HMM hmm)
 	{
 		if(testFolds == null || testFolds.size() == 0)
-			throw new UnsupportedOperationException("no test folds. you have to call createFolds() first");
+			throw new UnsupportedOperationException("no test folds. you have to call createFolds() first. also make sure to have at least 10 files in the test/train set");
 		StringBuilder testString = new StringBuilder(20000*testFolds.size());	// 20000 chars per fold
 		for(int i = 0; i < testFolds.size(); i++)
 		{
