@@ -79,13 +79,12 @@ class assignment5
 					System.out.println("Fold " + (foldIndex+1) + ", " + allValidations[foldIndex].numSentences + " sentences, accuracy " + allValidations[foldIndex].accuracy);
 					cv.createFolds(args[1]);	// choose randomly from training set to obtain training and test files
 				}
-				// TODO: mean / stdev
 				mean /= 10.0;
 				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
 				{
 					stdev += Math.pow((allValidations[foldIndex].accuracy - mean), 2);
 				}
-				stdev = Math.sqrt(stdev/10);
+				stdev = Math.sqrt(stdev/10.0);
 				System.out.println("Average accuracy " + mean + ", standard deviation " + stdev);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
