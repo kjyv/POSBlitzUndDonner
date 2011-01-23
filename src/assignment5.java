@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -22,9 +23,28 @@ class assignment5
 		
 		/*
 		HMM hmm2 = new HMM();
-		String[] tokens = {"token1", "token2", "token3", "token4", "token1", "token2", "token3"};
-		String[] tags = {"tag1", "tag1", "tag1", "tag1", "tag1", "tag1", "tag1"};
-		hmm2.train(new Vector<String>(Arrays.asList(tokens)), new Vector<String>(Arrays.asList(tags)));
+		int numTokens = 1000000;
+		String[] tokens = new String[numTokens];
+		String[] tags = new String[numTokens];
+		for(int i=0; i+3< numTokens; i+=4)
+		{
+			tokens[i] = "a";
+			tokens[i+1] = "a";
+			tokens[i+2] = "b";
+			tokens[i+3] = "b";
+			
+			tags[i] = "s1";
+			tags[i+1] = "s1";
+			tags[i+2] = "s2";
+			tags[i+3] = "s2";
+		}
+		//String[] tokens = {"a", "a", "a", "b", "b", "b", "a"};
+		Vector<String> tokensVector = new Vector<String>(Arrays.asList(tokens));
+		//String[] tags = {"s1", "s1", "s1", "s2", "s2", "s2", "s1"};
+		hmm2.train(tokensVector, new Vector<String>(Arrays.asList(tags)));
+		Vector<String> tagsDecoded = hmm2.decode(tokensVector);
+		System.out.println("done");
+		//System.out.println(tagsDecoded);
 		*/
 		/*
 		Vector<String> v1 = new Vector<String>();
@@ -46,17 +66,27 @@ class assignment5
 		if(args[0].equals("learn"))
 		{
 			CrossValidator cv;
+			CrossValidation[] allValidations = new CrossValidation[10];
+			double mean = 0.0, stdev = 0.0;
 			try {
 				cv = new CrossValidator(args[1]);
 				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
 				{
 					HMM hmm = cv.learn();
 					System.out.println("number of hmm states: " + hmm.graph.size());
-					CrossValidation validated = cv.evaluate(hmm);
-					System.out.println("Fold " + (foldIndex+1) + ", " + validated.numSentences + " sentences, accuracy " + validated.accuracy);
+					allValidations[foldIndex] = cv.evaluate(hmm);
+					mean += allValidations[foldIndex].accuracy;
+					System.out.println("Fold " + (foldIndex+1) + ", " + allValidations[foldIndex].numSentences + " sentences, accuracy " + allValidations[foldIndex].accuracy);
 					cv.createFolds(args[1]);	// choose randomly from training set to obtain training and test files
 				}
 				// TODO: mean / stdev
+				mean /= 10.0;
+				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
+				{
+					stdev += Math.pow((allValidations[foldIndex].accuracy - mean), 2);
+				}
+				stdev = Math.sqrt(stdev/10);
+				System.out.println("Average accuracy " + mean + ", standard deviation " + stdev);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

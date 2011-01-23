@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Vector;
 
 class CrossValidator
@@ -27,17 +28,11 @@ class CrossValidator
 		File[] annotatedFiles = dir.listFiles();
 		int numFiles = annotatedFiles.length;
 		// create array 0..len-1 and permute it randomly
-		Vector<Integer> remainingIndices = new Vector<Integer>(numFiles);
-		for(int i = 0; i < numFiles; i++)
-			remainingIndices.add(i);
 		Vector<Integer> permutatedIndices = new Vector<Integer>(numFiles);
-		while(remainingIndices.size() > 0)
-		{
-			int ran = (int)Math.round(Math.random()*(remainingIndices.size()-1));
-			permutatedIndices.add(remainingIndices.get(ran));
-			remainingIndices.remove(ran);
-		}
-		remainingIndices = null;
+		for(int i = 0; i < numFiles; i++)
+			permutatedIndices.add(i);
+		Collections.shuffle(permutatedIndices);
+		
 		// permutatedIndices are now randomly permuted
 		// 10 fold cross validation => use last 10% for testing
 		int lastTrainIndex = (int)Math.round(0.9*(numFiles-1));
@@ -81,9 +76,15 @@ class CrossValidator
 		}
 		Parser p = new Parser(testString.toString());
 		Vector<String> tokens = p.getTokens(), tagsTrue = p.getTags();
+		//System.out.println("test tokens:");
+		//System.out.println(tokens);
+		//System.out.println("test tags (truth):");
+		//System.out.println(tagsTrue);
 		Vector<String> tagsDecoded = hmm.decode(tokens);
+		//System.out.println("test tags (decoded):");
+		//System.out.println(tagsDecoded);
 		
-		double accuracy = 0;
+		double accuracy = 0.0;
 		int numSentences = 0;
 		for(int i = 0; i < tagsDecoded.size(); i++)
 		{
