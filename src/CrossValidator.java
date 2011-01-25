@@ -98,7 +98,7 @@ class CrossValidator
 		return new CrossValidation(accuracy, numSentences);
 	}
 	
-	private static String readFileAsString(File filePath) throws java.io.IOException
+	public static String readFileAsString(File filePath) throws java.io.IOException
 	{
         StringBuffer fileData = new StringBuffer(1000);
         BufferedReader reader = new BufferedReader(

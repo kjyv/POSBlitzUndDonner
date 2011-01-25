@@ -1,7 +1,8 @@
 import java.util.HashMap;
 import java.util.Vector;
 
-public class HMMState {
+public class HMMState
+{
 	Vector<String> tags;
 	HashMap<Vector<String>, HMMEdge> outgoing;
 	HashMap<Vector<String>, Double> probabilities;

@@ -1,4 +1,7 @@
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,7 +15,7 @@ class assignment5
 {
 	static int ngram_length = 2;
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
 		/*
 		Pattern p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");
@@ -21,7 +24,7 @@ class assignment5
 		System.out.println(m.group(1)+ "#" + m.group(2) + "#" + m.group(3));
 		*/
 		
-		
+		/*
 		HMM hmm2 = new HMM();
 		int numTokens = 12;
 		String[] tokens = new String[numTokens];
@@ -42,12 +45,41 @@ class assignment5
 		Vector<String> tokensVector = new Vector<String>(Arrays.asList(tokens));
 		Vector<String> tagsVector = new Vector<String>(Arrays.asList(tags));
 		//String[] tags = {"s1", "s1", "s1", "s2", "s2", "s2", "s1"};
-		hmm2.train(tokensVector, new Vector<String>(Arrays.asList(tags)));
+		hmm2.train(tokensVector, tagsVector);
 		hmm2.printGraph();
 		Vector<String> tagsDecoded = hmm2.decode(tokensVector);
 		System.out.println("done");
 		System.out.println(tagsVector);
 		System.out.println(tagsDecoded);
+		*/
+		
+		File dir = new File(args[1]);
+		if(!dir.isDirectory())
+		{
+			throw new IllegalArgumentException("path is not a directory");
+		}
+		File[] annotatedFiles = dir.listFiles();
+		StringBuilder trainString = new StringBuilder();
+		for (int i = 0; i < annotatedFiles.length; i++) {
+			File f = annotatedFiles[i];
+			trainString.append(CrossValidator.readFileAsString(f));
+		}
+		Parser p = new Parser(trainString.toString());
+		Vector<String> tokens = p.getTokens();
+		Vector<String> tags = p.getTags();
+		HMM hmm3 = new HMM();
+		System.out.println("training...");
+		hmm3.train(tokens, tags);
+		
+		System.out.println("decoding:");
+		String[] testTokens = {"This", "is" , "an", "example", "to" ,"test", "our", "model", "."};
+		Vector<String> testTags = hmm3.decode(new Vector<String>(Arrays.asList(testTokens)));
+		System.out.println("decoded tags:");
+		System.out.println(testTags);
+		System.out.println("real tags:");
+		System.out.println("[dt, bez, at, nn, to, vb, pp$, nn, .]");
+		
+		System.out.println("done.");
 		
 		if(true) return;
 		

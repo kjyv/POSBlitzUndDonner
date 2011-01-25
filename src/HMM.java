@@ -1,15 +1,13 @@
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Vector;
 
 class HMM
-{	
+{
 	HashMap<String, HMMState> graph;
-	final double missingTokenEmissionProbability = 0.0;
-	final double missingEdgeTransitionProbability = 0.0;
+	final double missingTokenEmissionProbability = -10.0;
+	final double missingEdgeTransitionProbability = -10.0;
 	
 	public HMM(){
 	
@@ -133,9 +131,14 @@ class HMM
 							.probabilities.get(ngrams.tokens.get(0));
 			// TODO: should not occur if smoothing was applied after learning
 			if(prob == null || prob == 0.0)
+			{
 				prob = missingTokenEmissionProbability;
+			}
 			else
+			{
+				System.out.println("col 0, EmissionFound: log(" + prob + ") in state " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngrams.tokens.get(0));
 				prob = Math.log(prob);
+			}
 			viterbi[currStateIndex][0] = prob;
 		}
 		
@@ -151,8 +154,11 @@ class HMM
 				if(probEmission == null || probEmission == 0.0)
 					probEmission = missingTokenEmissionProbability;
 				else
+				{
+					System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngram_tokens);
 					probEmission = Math.log(probEmission);
-				double maxProb = 0;
+				}
+				double maxProb = -Double.MAX_VALUE;
 				// determine maximum probability to reach currState (from any previous state)
 				Double transitionProb;
 				for(int previousStateIndex = 0; previousStateIndex < numStates; previousStateIndex++)
@@ -168,7 +174,9 @@ class HMM
 					if(transitionProb == null || transitionProb == 0.0)
 						transitionProb = missingEdgeTransitionProbability;
 					else
+					{
 						transitionProb = Math.log(transitionProb);
+					}
 					double prob = viterbi[previousStateIndex][ngramIndex-1] + transitionProb;
 					if(prob > maxProb)
 						maxProb = prob;
@@ -177,12 +185,13 @@ class HMM
 			}
 		}
 		
-		//System.out.println(Arrays.deepToString(viterbi));
+		System.out.println("viterbi table");
+		print2dArray(viterbi);
 		
 		// backtracking to find the optimal (most probable) path
 		LinkedList<String> tags = new LinkedList<String>();	// to be able to prepend items efficiently
 		// determine maximum of last column to use as initial state for backtracking
-		double max = -1;
+		double max = -Double.MAX_VALUE;
 		int maxStateIndex = -1;
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
@@ -205,7 +214,9 @@ class HMM
 			if(probEmission == null || probEmission == 0.0)
 				probEmission = missingTokenEmissionProbability;
 			else
+			{
 				probEmission = Math.log(probEmission);
+			}
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
@@ -256,61 +267,6 @@ class HMM
 	
 	public void serialize(){}
 	
-	private NGrams createNonOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
-	{
-		NGrams ret = new NGrams(tags != null);
-		Vector<String> ngramTokens = null;
-		Vector<String> ngramTags = null;
-		
-		for(int i=0; i<tokens.size(); i+=n)
-		{
-			// create current ngram
-			ngramTokens = new Vector<String>(n);
-			if(tags != null)
-				ngramTags = new Vector<String>(n);
-			int startOffset = 0;	// offset to the left, if i+nGramLength would be out of range (end of token list)
-			if(i+n-1 >= tokens.size())
-				startOffset = tokens.size() - i - n;	// is negative
-			//System.out.println("i: " + i + "  startOffset: " + startOffset);
-			for(int j = startOffset; j < n+startOffset; j++)
-			{
-				ngramTokens.add(tokens.get(i+j));
-				if(ngramTags != null)
-					ngramTags.add(tags.get(i+j));
-			}
-			//TODO: maybe stop adding to ngram if senetence end?
-			ret.tokens.add(ngramTokens);
-			if(ngramTags != null)
-				ret.tags.add(ngramTags);
-		}
-		return ret;
-	}
-	
-	public static NGrams createOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
-	{
-		NGrams ret = new NGrams(tags != null);
-		Vector<String> ngramTokens = null;
-		Vector<String> ngramTags = null;
-		
-		for(int i=0; i<=tokens.size() - n; i++)
-		{
-			// create current ngram
-			ngramTokens = new Vector<String>(n);
-			if(tags != null)
-				ngramTags = new Vector<String>(n);
-			for(int j = 0; j < n; j++)
-			{
-				ngramTokens.add(tokens.get(i+j));
-				if(ngramTags != null)
-					ngramTags.add(tags.get(i+j));
-			}
-			ret.tokens.add(ngramTokens);
-			if(ngramTags != null)
-				ret.tags.add(ngramTags);
-		}
-		return ret;
-	}
-	
 	public void printGraph()
 	{
 		if(graph == null || graph.size()==0)
@@ -347,11 +303,71 @@ class HMM
 				adj[i][toStateIndex] = weight;
 			}
 		}
-		for (int i = 0; i < adj.length; i++)
+		print2dArray(adj);
+	}
+	
+	private NGrams createNonOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
+	{
+		NGrams ret = new NGrams(tags != null);
+		Vector<String> ngramTokens = null;
+		Vector<String> ngramTags = null;
+		
+		for(int i=0; i<tokens.size(); i+=n)
 		{
-			for (int j = 0; j < adj[i].length; j++)
+			// create current ngram
+			ngramTokens = new Vector<String>(n);
+			if(tags != null)
+				ngramTags = new Vector<String>(n);
+			int startOffset = 0;	// offset to the left, if i+nGramLength would be out of range (end of token list)
+			if(i+n-1 >= tokens.size())
+				startOffset = tokens.size() - i - n;	// is negative
+			//System.out.println("i: " + i + "  startOffset: " + startOffset);
+			for(int j = startOffset; j < n+startOffset; j++)
 			{
-				System.out.print(adj[i][j] + "\t");
+				ngramTokens.add(tokens.get(i+j));
+				if(ngramTags != null)
+					ngramTags.add(tags.get(i+j));
+			}
+			//TODO: maybe stop adding to ngram if senetence end?
+			ret.tokens.add(ngramTokens);
+			if(ngramTags != null)
+				ret.tags.add(ngramTags);
+		}
+		return ret;
+	}
+	
+	private static NGrams createOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
+	{
+		NGrams ret = new NGrams(tags != null);
+		Vector<String> ngramTokens = null;
+		Vector<String> ngramTags = null;
+		
+		for(int i=0; i<=tokens.size() - n; i++)
+		{
+			// create current ngram
+			ngramTokens = new Vector<String>(n);
+			if(tags != null)
+				ngramTags = new Vector<String>(n);
+			for(int j = 0; j < n; j++)
+			{
+				ngramTokens.add(tokens.get(i+j));
+				if(ngramTags != null)
+					ngramTags.add(tags.get(i+j));
+			}
+			ret.tokens.add(ngramTokens);
+			if(ngramTags != null)
+				ret.tags.add(ngramTags);
+		}
+		return ret;
+	}
+	
+	private void print2dArray(double[][] table)
+	{
+		for (int i = 0; i < table.length; i++)
+		{
+			for (int j = 0; j < table[i].length; j++)
+			{
+				System.out.print(table[i][j] + "\t");
 			}
 			System.out.println();
 		}
