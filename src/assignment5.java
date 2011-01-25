@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 class assignment5
 {
-	static int ngram_length = 3;
+	static int ngram_length = 2;
 	
 	public static void main(String[] args)
 	{
@@ -21,9 +21,9 @@ class assignment5
 		System.out.println(m.group(1)+ "#" + m.group(2) + "#" + m.group(3));
 		*/
 		
-		/*
+		
 		HMM hmm2 = new HMM();
-		int numTokens = 1000000;
+		int numTokens = 12;
 		String[] tokens = new String[numTokens];
 		String[] tags = new String[numTokens];
 		for(int i=0; i+3< numTokens; i+=4)
@@ -40,28 +40,16 @@ class assignment5
 		}
 		//String[] tokens = {"a", "a", "a", "b", "b", "b", "a"};
 		Vector<String> tokensVector = new Vector<String>(Arrays.asList(tokens));
+		Vector<String> tagsVector = new Vector<String>(Arrays.asList(tags));
 		//String[] tags = {"s1", "s1", "s1", "s2", "s2", "s2", "s1"};
 		hmm2.train(tokensVector, new Vector<String>(Arrays.asList(tags)));
+		hmm2.printGraph();
 		Vector<String> tagsDecoded = hmm2.decode(tokensVector);
 		System.out.println("done");
-		//System.out.println(tagsDecoded);
-		*/
-		/*
-		Vector<String> v1 = new Vector<String>();
-		v1.add("test1");
-		Vector<String> v2 = new Vector<String>();
-		v2.add("test1");
-		HashMap<Vector<String>,Double> hm = new HashMap<Vector<String>,Double>();
-		hm.put(v1, new Double(1));
-		Double d;
-		d = hm.get(v1);
-		System.out.println(d);
-		v1 = null;
-		System.gc();
-		d = hm.get(v2);
-		System.out.println(d);
-		*/
-		//if(true) return;
+		System.out.println(tagsVector);
+		System.out.println(tagsDecoded);
+		
+		if(true) return;
 		
 		if(args[0].equals("learn"))
 		{
