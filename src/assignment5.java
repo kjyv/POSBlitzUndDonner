@@ -17,6 +17,8 @@ class assignment5
 	
 	public static void main(String[] args) throws IOException
 	{
+		long startTime = System.currentTimeMillis();
+		
 		/*
 		Pattern p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");
 		Matcher m = p.matcher("token/np ");
@@ -79,7 +81,9 @@ class assignment5
 		System.out.println("real tags:");
 		System.out.println("[dt, bez, at, nn, to, vb, pp$, nn, .]");
 		
-		System.out.println("done.");
+		System.out.println("done, decode took:");
+		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
+
 		
 		if(true) return;
 		

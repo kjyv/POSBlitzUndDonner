@@ -1,11 +1,16 @@
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 class HMM
 {
 	HashMap<String, HMMState> graph;
+	String[] taglist;
+	
 	final double missingTokenEmissionProbability = -10.0;
 	final double missingEdgeTransitionProbability = -10.0;
 	
@@ -23,6 +28,16 @@ class HMM
 		int ngram_length = assignment5.ngram_length;
 		HMMState lastState = null;
 		NGrams ngrams = createNGramsFromTokens(tokens, tags, ngram_length);
+		
+		//generate sorted list of tags (index->tag n-gram mapping)
+		TreeSet<String> tagsSet = new TreeSet<String>();
+		for(Vector<String> tag: ngrams.tags){
+			tagsSet.add(assignment5.join(tag, " "));
+		}
+		taglist = (String[])tagsSet.toArray(new String[tagsSet.size()]);
+
+		//taglist = graph.keySet().toArray(new String[0]);
+		//Arrays.sort(taglist);
 		
 		for(int ngramIndex=0; ngramIndex<ngrams.tokens.size(); ngramIndex++)
 		{
@@ -53,11 +68,12 @@ class HMM
 			//System.out.println();
 			//add absolute probability
 			Double prob = state.probabilities.get(ngram_tokens);
+			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			if(prob != null){
 				// prob++ does not work
-				state.probabilities.put(new Vector<String>(ngram_tokens), prob+1);
+				state.probabilities.put(state.tags, prob+1);
 			} else {
-				state.probabilities.put(new Vector<String>(ngram_tokens), new Double(1));
+				state.probabilities.put(state.tags, new Double(1));
 			}
 			//System.out.println("keyset after");
 			//for(Vector<String> tmp : state.probabilities.keySet())
@@ -68,11 +84,11 @@ class HMM
 
 			//add or update edge to this state
 			if(lastState != null){
-				HMMEdge edge = lastState.outgoing.get(state.tags);
+				HMMEdge edge = lastState.outgoing.get(currentStateIndex);
 				if (edge != null){
 					edge.probability++;
 				} else {
-					lastState.outgoing.put(state.tags, new HMMEdge(state, 1));
+					lastState.outgoing.put(currentStateIndex, new HMMEdge(state, 1));
 				}
 			}
 			
@@ -101,16 +117,21 @@ class HMM
 
 			//get sum of all edges
 			int sum_edge_probs = 0;
-			for(Vector<String> e_key: state.outgoing.keySet()){
+			for(Integer e_key: state.outgoing.keySet()){
 				HMMEdge edge = state.outgoing.get(e_key);
 				sum_edge_probs += (int)edge.probability;
 			}
 
 			//normalize edges
-			for(Vector<String> e_key: state.outgoing.keySet()){
+			for(Integer e_key: state.outgoing.keySet()){
 				HMMEdge edge = state.outgoing.get(e_key);
 				edge.probability /= sum_edge_probs;
 			}
+		}
+		
+		//set index for each state
+		for (int tag = 0; tag < taglist.length; tag++) {
+			graph.get(taglist[tag]).tagindex = tag;
 		}
 	}
 	
@@ -160,18 +181,19 @@ class HMM
 				}
 				double maxProb = -Double.MAX_VALUE;
 				// determine maximum probability to reach currState (from any previous state)
-				Double transitionProb;
+				double transitionProb;
 				for(int previousStateIndex = 0; previousStateIndex < numStates; previousStateIndex++)
 				{
 					HMMState prevState = graph.get(graphKeysOrdered[previousStateIndex]);
-					HMMEdge edge = prevState.outgoing.get(currState.tags);
+					HMMEdge edge = prevState.outgoing.get(currState.tagindex);
 					// TODO: should not occur, when smoothing was applied after learning
 					if(edge == null)
 						transitionProb = 0.0;
-					else
+					else {
 						transitionProb = edge.probability;
+					}
 					// TODO: should not occur, when smoothing was applied after learning
-					if(transitionProb == null || transitionProb == 0.0)
+					if(transitionProb == 0.0)
 						transitionProb = missingEdgeTransitionProbability;
 					else
 					{
@@ -283,13 +305,13 @@ class HMM
 		{
 			String key = graphKeysOrdered[i];
 			HMMState state = graph.get(key);
-			for(Vector<String> toState:state.outgoing.keySet())
+			for(Integer toState: state.outgoing.keySet())
 			{
 				HMMEdge edge = state.outgoing.get(toState);
 				if(edge == null)
 					continue;
 				Double weight = edge.probability;
-				String toStateString = assignment5.join(toState, " ");
+				String toStateString = taglist[toState];
 				// look for index j in graphKeysOrdered with graphKeysOrdered[j].equals(toStateStr)
 				int toStateIndex = -1;
 				for(int j = 0; j < graphKeysOrdered.length; j++)
