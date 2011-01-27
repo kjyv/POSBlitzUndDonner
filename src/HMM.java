@@ -71,9 +71,9 @@ class HMM
 			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			if(prob != null){
 				// prob++ does not work
-				state.probabilities.put(state.tags, prob+1);
+				state.probabilities.put(new Vector<String>(ngram_tokens), prob+1);
 			} else {
-				state.probabilities.put(state.tags, new Double(1));
+				state.probabilities.put(new Vector<String>(ngram_tokens), new Double(1));
 			}
 			//System.out.println("keyset after");
 			//for(Vector<String> tmp : state.probabilities.keySet())
