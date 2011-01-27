@@ -9,22 +9,24 @@ import java.util.Vector;
 
 class HMM
 {
-	HashMap<String, HMMState> graph;
+	//String[] stateTags;
+	HMMState[] statelist;
 	String[] taglist;
 	
 	final double missingTokenEmissionProbability = -10.0;
 	final double missingEdgeTransitionProbability = -10.0;
 	
 	public HMM(){
-	
-		//tag -> state mapping for finding what we already have
-		graph = new HashMap<String, HMMState>(); 
 	}
 	
 	public void train(Vector<String> tokens, Vector<String> tags)
 	{
 		// TODO: smoothing
-		System.out.println("training");
+		//System.out.println("training");
+		
+		//tag -> state mapping for finding what we already have
+		HashMap<String, HMMState> graph = new HashMap<String, HMMState>();
+		
 		//create state graph from given data
 		int ngram_length = assignment5.ngram_length;
 		HMMState lastState = null;
@@ -39,6 +41,9 @@ class HMM
 
 		//taglist = graph.keySet().toArray(new String[0]);
 		//Arrays.sort(taglist);
+		
+		statelist = new HMMState[taglist.length];
+//		stateTags = new String[ngrams.tags.size()];
 		
 		for(int ngramIndex=0; ngramIndex<ngrams.tokens.size(); ngramIndex++)
 		{
@@ -152,6 +157,12 @@ class HMM
 			currState.seenTokens = emittedTokens;
 			currState.seenTokenEmissionProbabilities = emissionProbs;
 		}
+		
+		//create arrays from graph
+		//stateTags = (String[]) graph.keySet().toArray(new String[graph.keySet().size()]);
+		for(int tag = 0; tag < taglist.length; tag++){
+			statelist[tag] = graph.get(taglist[tag]);
+		}
 	}
 	
 	public Vector<String> decode(Vector<String> tokens)
@@ -159,15 +170,15 @@ class HMM
 		//System.out.println("decoding");
 		int ngram_length = assignment5.ngram_length;
 		NGrams ngrams = createNGramsFromTokens(tokens, null, ngram_length);
-		int numStates = graph.size()
+		int numStates = statelist.length
 			, numNGrams = ngrams.tokens.size();
 		// states' order is defined by graph.keySet()
-		String[] graphKeysOrdered = graph.keySet().toArray(new String[0]);
+		String[] graphKeysOrdered = taglist;
 		double[][] viterbi = new double[numStates][numNGrams];
 		// first column (ngram): no transition probabilities, no previous probabilites => only emission probs
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
-			HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
+			HMMState currState = statelist[currStateIndex];
 			int emissionTokenIndex = Arrays.binarySearch(
 										currState.seenTokens,
 										assignment5.join(ngrams.tokens.get(0), " ")
@@ -199,7 +210,7 @@ class HMM
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex);
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
-				HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
+				HMMState currState = statelist[currStateIndex];
 				
 				int emissionTokenIndex = Arrays.binarySearch(
 						currState.seenTokens,
@@ -230,7 +241,7 @@ class HMM
 				double transitionProb;
 				for(int previousStateIndex = 0; previousStateIndex < numStates; previousStateIndex++)
 				{
-					HMMState prevState = graph.get(graphKeysOrdered[previousStateIndex]);
+					HMMState prevState = statelist[previousStateIndex];
 					HMMEdge edge = prevState.outgoing.get(currState.tagindex);
 					// TODO: should not occur, when smoothing was applied after learning
 					if(edge == null)
@@ -270,16 +281,16 @@ class HMM
 			}
 		}
 		
-		tags.addAll(0,graph.get(graphKeysOrdered[maxStateIndex]).tags);	// prepends tags
+		tags.addAll(0,statelist[maxStateIndex].tags);	// prepends tags
 		
 		for(int ngramIndex=numNGrams-2; ngramIndex>=0; ngramIndex--)	// go backwards in time
 		{
 			System.out.println("decoding: backtracking: column " + ngramIndex);
-			HMMState maxState = graph.get(graphKeysOrdered[maxStateIndex]);
+			HMMState maxState = statelist[maxStateIndex];
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex+1);	// from "next" timestep
 			//Double probEmission = maxState.probabilities.get(ngram_tokens);
 			
-			// TODO outsource
+			// TODO outsource ... or replace with hashing
 			int emissionTokenIndex = Arrays.binarySearch(
 					maxState.seenTokens,
 					assignment5.join(ngram_tokens, " ")
@@ -303,7 +314,7 @@ class HMM
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
-				HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
+				HMMState currState = statelist[currStateIndex];
 				HMMEdge edge = currState.outgoing.get(maxState.tagindex);
 				Double transitionProb;
 				if(edge == null)
@@ -352,20 +363,19 @@ class HMM
 	
 	public void printGraph()
 	{
-		if(graph == null || graph.size()==0)
+		if(statelist == null || statelist.length==0)
 		{
 			System.out.println("[HMM is empty]");
 			return;
 		}
-		String[] graphKeysOrdered = graph.keySet().toArray(new String[0]);
+		String[] graphKeysOrdered = taglist;
 		Arrays.sort(graphKeysOrdered);
 		for(String key:graphKeysOrdered) System.out.println(key);
 		// adjacency matrix
 		double[][] adj = new double[graphKeysOrdered.length][graphKeysOrdered.length];
 		for(int i = 0; i < graphKeysOrdered.length; i++)
 		{
-			String key = graphKeysOrdered[i];
-			HMMState state = graph.get(key);
+			HMMState state = statelist[i];
 			for(Integer toState: state.outgoing.keySet())
 			{
 				HMMEdge edge = state.outgoing.get(toState);

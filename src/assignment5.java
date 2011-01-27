@@ -97,7 +97,7 @@ class assignment5
 				for(int foldIndex = 0; foldIndex < 10; foldIndex++)
 				{
 					HMM hmm = cv.learn();
-					System.out.println("number of hmm states: " + hmm.graph.size());
+					System.out.println("number of hmm states: " + hmm.statelist.length);
 					allValidations[foldIndex] = cv.evaluate(hmm);
 					mean += allValidations[foldIndex].accuracy;
 					System.out.println("Fold " + (foldIndex+1) + ", " + allValidations[foldIndex].numSentences + " sentences, accuracy " + allValidations[foldIndex].accuracy);
