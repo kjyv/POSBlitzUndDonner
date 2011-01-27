@@ -13,12 +13,12 @@ import java.util.regex.Pattern;
 
 class assignment5
 {
-	static int ngram_length = 2;
+	static int ngram_length = 1;
 	
 	public static void main(String[] args) throws IOException
 	{
 		long startTime = System.currentTimeMillis();
-		
+
 		/*
 		Pattern p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");
 		Matcher m = p.matcher("token/np ");
@@ -74,7 +74,7 @@ class assignment5
 		hmm3.train(tokens, tags);
 		
 		System.out.println("decoding:");
-		String[] testTokens = {"This", "is" , "an", "example", "to" ,"test", "our", "model", "."};
+		String[] testTokens = {"Check", "this" , "shit", "out", "to" ,"test", "our", "model", "."};
 		Vector<String> testTags = hmm3.decode(new Vector<String>(Arrays.asList(testTokens)));
 		System.out.println("decoded tags:");
 		System.out.println(testTags);

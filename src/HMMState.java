@@ -6,6 +6,9 @@ public class HMMState
 	Vector<String> tags;
 	HashMap<Integer, HMMEdge> outgoing;
 	HashMap<Vector<String>, Double> probabilities;
+	String[] seenTokens;
+	double[] seenTokenEmissionProbabilities;
+	
 	int tagindex;
 	
 	public HMMState(){

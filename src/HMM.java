@@ -2,6 +2,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -131,7 +132,25 @@ class HMM
 		
 		//set index for each state
 		for (int tag = 0; tag < taglist.length; tag++) {
-			graph.get(taglist[tag]).tagindex = tag;
+			HMMState currState = graph.get(taglist[tag]);
+			currState.tagindex = tag;
+			String[] emittedTokens = new String[currState.probabilities.size()];
+			double[] emissionProbs = new double[emittedTokens.length];
+			int counter = 0;
+			
+			for(Entry<Vector<String>, Double> emissionEntry : currState.probabilities.entrySet())
+			{
+				emittedTokens[counter++] = assignment5.join(emissionEntry.getKey(), " ");
+			}
+			Arrays.sort(emittedTokens);
+			counter = 0;
+			for(String emittedToken : emittedTokens)
+			{
+				Vector<String> vec = new Vector<String>(Arrays.asList(emittedToken.split(" ")));
+				emissionProbs[counter++] = currState.probabilities.get(vec);
+			}
+			currState.seenTokens = emittedTokens;
+			currState.seenTokenEmissionProbabilities = emissionProbs;
 		}
 	}
 	
@@ -148,7 +167,17 @@ class HMM
 		// first column (ngram): no transition probabilities, no previous probabilites => only emission probs
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
-			Double prob = graph.get(graphKeysOrdered[currStateIndex])
+			HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
+			int emissionTokenIndex = Arrays.binarySearch(
+										currState.seenTokens,
+										assignment5.join(ngrams.tokens.get(0), " ")
+										);
+			double prob;
+			if(emissionTokenIndex < 0)
+				prob = missingTokenEmissionProbability;
+			else
+				prob = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
+			/*Double prob = graph.get(graphKeysOrdered[currStateIndex])
 							.probabilities.get(ngrams.tokens.get(0));
 			// TODO: should not occur if smoothing was applied after learning
 			if(prob == null || prob == 0.0)
@@ -160,6 +189,7 @@ class HMM
 				System.out.println("col 0, EmissionFound: log(" + prob + ") in state " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngrams.tokens.get(0));
 				prob = Math.log(prob);
 			}
+			*/
 			viterbi[currStateIndex][0] = prob;
 		}
 		
@@ -170,6 +200,21 @@ class HMM
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
 				HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
+				
+				int emissionTokenIndex = Arrays.binarySearch(
+						currState.seenTokens,
+						assignment5.join(ngram_tokens, " ")
+						);
+				double probEmission;
+				if(emissionTokenIndex < 0)
+					probEmission = missingTokenEmissionProbability;
+				else
+				{
+					probEmission = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
+					System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngram_tokens);
+				}
+				
+				/*
 				Double probEmission = currState.probabilities.get(ngram_tokens);
 				// TODO: should not occur, when smoothing was applied after learning
 				if(probEmission == null || probEmission == 0.0)
@@ -179,6 +224,7 @@ class HMM
 					System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngram_tokens);
 					probEmission = Math.log(probEmission);
 				}
+				*/
 				double maxProb = -Double.MAX_VALUE;
 				// determine maximum probability to reach currState (from any previous state)
 				double transitionProb;
@@ -231,19 +277,34 @@ class HMM
 			System.out.println("decoding: backtracking: column " + ngramIndex);
 			HMMState maxState = graph.get(graphKeysOrdered[maxStateIndex]);
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex+1);	// from "next" timestep
-			Double probEmission = maxState.probabilities.get(ngram_tokens);
-			// TODO: should not occur, when smoothing was applied after learning
+			//Double probEmission = maxState.probabilities.get(ngram_tokens);
+			
+			// TODO outsource
+			int emissionTokenIndex = Arrays.binarySearch(
+					maxState.seenTokens,
+					assignment5.join(ngram_tokens, " ")
+					);
+			double probEmission;
+			if(emissionTokenIndex < 0)
+				probEmission = missingTokenEmissionProbability;
+			else
+			{
+				probEmission = Math.log(maxState.seenTokenEmissionProbabilities[emissionTokenIndex]);
+			}
+			
+			/*
 			if(probEmission == null || probEmission == 0.0)
 				probEmission = missingTokenEmissionProbability;
 			else
 			{
 				probEmission = Math.log(probEmission);
 			}
+			*/
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
 				HMMState currState = graph.get(graphKeysOrdered[currStateIndex]);
-				HMMEdge edge = currState.outgoing.get(maxState.tags);
+				HMMEdge edge = currState.outgoing.get(maxState.tagindex);
 				Double transitionProb;
 				if(edge == null)
 					transitionProb = 0.0;
