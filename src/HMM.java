@@ -132,6 +132,7 @@ class HMM
 		
 		//set index for each state
 		for (int tag = 0; tag < taglist.length; tag++) {
+			System.out.println(taglist[tag]);
 			HMMState currState = graph.get(taglist[tag]);
 			currState.tagindex = tag;
 			String[] emittedTokens = new String[currState.probabilities.size()];
@@ -253,8 +254,8 @@ class HMM
 			}
 		}
 		
-		System.out.println("viterbi table");
-		print2dArray(viterbi);
+		//System.out.println("viterbi table");
+		//print2dArray(viterbi);
 		
 		// backtracking to find the optimal (most probable) path
 		LinkedList<String> tags = new LinkedList<String>();	// to be able to prepend items efficiently
