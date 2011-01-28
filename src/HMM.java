@@ -387,9 +387,10 @@ class HMM
 		{
 			HMMState state = statelist[i];
 			for(int toState = 0; toState < state.outgoing.length; toState++) {
-				HMMEdge edge = state.outgoing[toState];
-				if(edge == null)
+				int outgoingIndex = Arrays.binarySearch(state.outgoingTags, toState);
+				if(outgoingIndex < 0)
 					continue;
+				HMMEdge edge = state.outgoing[outgoingIndex];
 				Double weight = edge.probability;
 				String toStateString = taglist[toState];
 				// look for index j in graphKeysOrdered with graphKeysOrdered[j].equals(toStateStr)
