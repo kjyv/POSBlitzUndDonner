@@ -9,25 +9,27 @@ import java.util.Vector;
 
 class HMM
 {
-	HMMState[] statelist;
-	String[] statetags;  //need this for proper state order
+	String[] taglist;	
 	
-	String[] taglist;
-	 		
+	HMMState[] statelist;
+	String[] statetags;  //non sorted graph taglist, need this for proper state order
+	
+	//tag -> state mapping for finding what we already have, slow, don't use for decoding
+	HashMap<String, HMMState> graph;
+
+	
 	final double missingTokenEmissionProbability = -10.0;
 	final double missingEdgeTransitionProbability = -10.0;
 	
 	public HMM(){
+		graph = new HashMap<String, HMMState>();
 	}
 	
 	public void train(Vector<String> tokens, Vector<String> tags)
 	{
 		// TODO: smoothing
 		//System.out.println("training");
-		
-		//tag -> state mapping for finding what we already have
-		HashMap<String, HMMState> graph = new HashMap<String, HMMState>();
-		
+				
 		//create state graph from given data
 		int ngram_length = assignment5.ngram_length;
 		HMMState lastState = null;
@@ -310,10 +312,9 @@ class HMM
 					assignment5.join(ngram_tokens, " ")
 					);
 			double probEmission;
-			if(emissionTokenIndex < 0)
+			if(emissionTokenIndex < 0){
 				probEmission = missingTokenEmissionProbability;
-			else
-			{
+			} else {
 				probEmission = Math.log(maxState.seenTokenEmissionProbabilities[emissionTokenIndex]);
 			}
 			
@@ -329,7 +330,7 @@ class HMM
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
 				HMMState currState = statelist[currStateIndex];
-				int outgoingIndex = Arrays.binarySearch(currState.outgoingIndexByTagIndex, currState.tagindex);
+				int outgoingIndex = Arrays.binarySearch(currState.outgoingIndexByTagIndex, maxState.tagindex);
 
 				Double transitionProb;
 				if(outgoingIndex < 0){
@@ -385,12 +386,11 @@ class HMM
 			System.out.println("[HMM is empty]");
 			return;
 		}
-		String[] graphKeysOrdered = statetags;
-		Arrays.sort(graphKeysOrdered);
-		for(String key:graphKeysOrdered) System.out.println(key);
+
+		for(String key:taglist) System.out.println(key);
 		// adjacency matrix
-		double[][] adj = new double[graphKeysOrdered.length][graphKeysOrdered.length];
-		for(int i = 0; i < graphKeysOrdered.length; i++)
+		double[][] adj = new double[taglist.length][taglist.length];
+		for(int i = 0; i < taglist.length; i++)
 		{
 			HMMState state = statelist[i];
 			for(int toState = 0; toState < state.outgoing.length; toState++) {
@@ -402,9 +402,9 @@ class HMM
 				String toStateString = statetags[toState];
 				// look for index j in graphKeysOrdered with graphKeysOrdered[j].equals(toStateStr)
 				int toStateIndex = -1;
-				for(int j = 0; j < graphKeysOrdered.length; j++)
+				for(int j = 0; j < taglist.length; j++)
 				{
-					if(graphKeysOrdered[j].equals(toStateString))
+					if(taglist[j].equals(toStateString))
 					{
 						toStateIndex = j;
 						break;
