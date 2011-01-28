@@ -10,7 +10,8 @@ import java.util.Vector;
 class HMM
 {
 	String[] taglist;	
-	
+	float[][] adjacencyMatrix;
+
 	HMMState[] statelist;
 	String[] statetags;  //non sorted graph taglist, need this for proper state order
 	
@@ -18,8 +19,8 @@ class HMM
 	HashMap<String, HMMState> graph;
 
 	
-	final double missingTokenEmissionProbability = -10.0;
-	final double missingEdgeTransitionProbability = -10.0;
+	final float missingTokenEmissionProbability = -10.0f;
+	final float missingEdgeTransitionProbability = -10.0f;
 	
 	public HMM(){
 		graph = new HashMap<String, HMMState>();
@@ -94,10 +95,9 @@ class HMM
 				if (edge != null){
 					edge.probability++;
 				} else {
-					lastState.outgoing_map.put(currentStateIndex, new HMMEdge(state, 1));
+					lastState.outgoing_map.put(currentStateIndex, new HMMEdge(state, 1.0f));
 				}
 			}
-			
 			lastState = state;
 		}
 		
@@ -118,6 +118,7 @@ class HMM
 				//System.out.println("iterator: key !" + assignment5.join(p_key, "#")+"!");
 				Double p = state.probabilities.get(p_key);
 				p /= total_emissions;
+				p = Math.log(p);
 				state.probabilities.put(p_key, p);
 			}
 
@@ -176,6 +177,20 @@ class HMM
 		for(int tag = 0; tag < statetags.length; tag++){
 			statelist[tag] = graph.get(statetags[tag]);
 		}
+
+		// using the state's tag index, fill adjacency matrix to get rid of HMMEdge and HMMState.outgoing
+		// matrix is not symmetric since we have directed edges
+		adjacencyMatrix = new float[taglist.length][taglist.length];
+		for (int i = 0; i < taglist.length; i++) {
+			for (int j = 0; j <  taglist.length; j++) {
+				HMMState fromState = graph.get(statetags[i]);
+				HMMEdge outgoingEdgeToJ = fromState.outgoing_map.get(j);
+				if(outgoingEdgeToJ == null)
+					adjacencyMatrix[i][j] = missingEdgeTransitionProbability;
+				else
+					adjacencyMatrix[i][j] = fromState.outgoing_map.get(j).probability;
+			}
+		}
 	}
 	
 	public Vector<String> decode(Vector<String> tokens)
@@ -185,9 +200,8 @@ class HMM
 		NGrams ngrams = createNGramsFromTokens(tokens, null, ngram_length);
 		int numStates = statelist.length
 			, numNGrams = ngrams.tokens.size();
-		// states' order is defined by graph.keySet()
-		//String[] graphKeysOrdered = statetags;
-		double[][] viterbi = new double[numStates][numNGrams];
+
+		float[][] viterbi = new float[numNGrams][numStates];
 		// first column (ngram): no transition probabilities, no previous probabilites => only emission probs
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
@@ -196,13 +210,13 @@ class HMM
 										currState.seenTokens,
 										assignment5.join(ngrams.tokens.get(0), " ")
 										);
-			double prob;
+			float probEmission;
 			if(emissionTokenIndex < 0)
-				prob = missingTokenEmissionProbability;
+				probEmission = missingTokenEmissionProbability;
 			else
-				prob = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
+				probEmission = (float)currState.seenTokenEmissionProbabilities[emissionTokenIndex];
 	
-			viterbi[currStateIndex][0] = prob;
+			viterbi[0][currStateIndex] = probEmission;
 		}
 		
 		for(int ngramIndex=1; ngramIndex<numNGrams; ngramIndex++)
@@ -218,21 +232,22 @@ class HMM
 						assignment5.join(ngram_tokens, " ")
 						);
 				
-				double probEmission;
+				float probEmission;
 				if(emissionTokenIndex < 0)
 					probEmission = missingTokenEmissionProbability;
 				else
 				{
-					probEmission = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
-					//System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens);
+					probEmission = (float)currState.seenTokenEmissionProbabilities[emissionTokenIndex];
+					//System.out.println("col "+ngramIndex+", EmissionFound: " + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens);
 				}
 				
-				double maxProb = -Double.MAX_VALUE;
+				float maxProb = Float.NEGATIVE_INFINITY;
 				// determine maximum probability to reach currState (from any previous state)
-				double transitionProb;
+				//float transitionProb;
+				float prob;
 				for(int previousStateIndex = 0; previousStateIndex < numStates; previousStateIndex++)
 				{
-					HMMState prevState = statelist[previousStateIndex];
+					/*HMMState prevState = statelist[previousStateIndex];
 					int outgoingIndex = Arrays.binarySearch(prevState.outgoingIndexByTagIndex, currState.tagindex);
 					
 					// TODO: should not occur, when smoothing was applied after learning
@@ -242,12 +257,13 @@ class HMM
 						HMMEdge edge = prevState.outgoing[outgoingIndex];
 						transitionProb = Math.log(edge.probability);
 					}
-
-					double prob = viterbi[previousStateIndex][ngramIndex-1] + transitionProb;
+					*/
+					//transitionProb = adjacencyMatrix[previousStateIndex][currStateIndex];
+					prob = viterbi[ngramIndex-1][previousStateIndex] + adjacencyMatrix[previousStateIndex][currStateIndex];
 					if(prob > maxProb)
 						maxProb = prob;
 				}
-				viterbi[currStateIndex][ngramIndex] = maxProb + probEmission;
+				viterbi[ngramIndex][currStateIndex] = maxProb + probEmission;
 			}
 		}
 		
@@ -257,13 +273,13 @@ class HMM
 		// backtracking to find the optimal (most probable) path
 		LinkedList<String> tags = new LinkedList<String>();	// to be able to prepend items efficiently
 		// determine maximum of last column to use as initial state for backtracking
-		double max = -Double.MAX_VALUE;
+		float max = Float.NEGATIVE_INFINITY;
 		int maxStateIndex = -1;
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
-			if(viterbi[currStateIndex][numNGrams-1] > max)
+			if(viterbi[numNGrams-1][currStateIndex] > max)
 			{
-				max = viterbi[currStateIndex][numNGrams-1];
+				max = viterbi[numNGrams-1][currStateIndex];
 				maxStateIndex = currStateIndex;
 			}
 		}
@@ -281,19 +297,19 @@ class HMM
 					maxState.seenTokens,
 					assignment5.join(ngram_tokens, " ")
 					);
-			double probEmission;
+			float probEmission;
 			
 			if(emissionTokenIndex < 0){
 				probEmission = missingTokenEmissionProbability;
 			} else {
-				probEmission = Math.log(maxState.seenTokenEmissionProbabilities[emissionTokenIndex]);
+				probEmission = (float)maxState.seenTokenEmissionProbabilities[emissionTokenIndex];
 			}
 
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
 				HMMState currState = statelist[currStateIndex];
-				int outgoingIndex = Arrays.binarySearch(currState.outgoingIndexByTagIndex, maxState.tagindex);
+				/*int outgoingIndex = Arrays.binarySearch(currState.outgoingIndexByTagIndex, maxState.tagindex);
 
 				Double transitionProb;
 				if(outgoingIndex < 0){
@@ -301,16 +317,16 @@ class HMM
 				} else {
 					HMMEdge edge = currState.outgoing[outgoingIndex];
 					transitionProb = Math.log(edge.probability);
-				}
-				
-				double prob = viterbi[currStateIndex][ngramIndex] + transitionProb + probEmission;
+				}*/
+				float transitionProb = adjacencyMatrix[maxStateIndex][currStateIndex];
+				float prob = viterbi[ngramIndex][currStateIndex] + transitionProb + probEmission;;
 				// check if found
 				if(prob == max)
 				{
 					// add this state's tags to output list and set this state as next "maxState"
 					tags.add(0, currState.tags.get(0));
 					//tags.addAll(0, currState.tags);
-					max = viterbi[currStateIndex][ngramIndex];
+					max = viterbi[ngramIndex][currStateIndex];
 					maxStateIndex = currStateIndex;
 					break;
 				}
@@ -357,8 +373,8 @@ class HMM
 				if(outgoingIndex < 0)
 					continue;
 				HMMEdge edge = state.outgoing[outgoingIndex];
-				Double weight = edge.probability;
-				String toStateString = statetags[toState];
+				Double weight = new Double(edge.probability);
+				String toStateString = taglist[toState];
 				// look for index j in graphKeysOrdered with graphKeysOrdered[j].equals(toStateStr)
 				int toStateIndex = -1;
 				for(int j = 0; j < taglist.length; j++)

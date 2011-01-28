@@ -1,9 +1,9 @@
 
 public class HMMEdge {
-	double probability;
+	float probability;
 	HMMState state;
 	
-	public HMMEdge(HMMState state, double probability){
+	public HMMEdge(HMMState state, float probability){
 		this.state = state;
 		this.probability = probability;
 	}

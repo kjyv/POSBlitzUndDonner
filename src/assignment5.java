@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 class assignment5
 {
-	static int ngram_length = 1;
+	static int ngram_length = 2;
 	
 	public static void main(String[] args) throws IOException
 	{		
@@ -49,7 +49,7 @@ class assignment5
 		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
 
 		
-		//if(true) return;
+		if(true) return;
 		
 		if(args[0].equals("learn"))
 		{
