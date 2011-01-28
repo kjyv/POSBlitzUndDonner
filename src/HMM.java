@@ -9,7 +9,6 @@ import java.util.Vector;
 
 class HMM
 {
-	//String[] stateTags;
 	HMMState[] statelist;
 	String[] taglist;
 	
@@ -38,12 +37,7 @@ class HMM
 			tagsSet.add(assignment5.join(tag, " "));
 		}
 		taglist = (String[])tagsSet.toArray(new String[tagsSet.size()]);
-
-		//taglist = graph.keySet().toArray(new String[0]);
-		//Arrays.sort(taglist);
-		
 		statelist = new HMMState[taglist.length];
-//		stateTags = new String[ngrams.tags.size()];
 		
 		for(int ngramIndex=0; ngramIndex<ngrams.tokens.size(); ngramIndex++)
 		{
@@ -90,11 +84,11 @@ class HMM
 
 			//add or update edge to this state
 			if(lastState != null){
-				HMMEdge edge = lastState.outgoing.get(currentStateIndex);
+				HMMEdge edge = lastState.outgoingm.get(currentStateIndex);
 				if (edge != null){
 					edge.probability++;
 				} else {
-					lastState.outgoing.put(currentStateIndex, new HMMEdge(state, 1));
+					lastState.outgoingm.put(currentStateIndex, new HMMEdge(state, 1));
 				}
 			}
 			
@@ -123,18 +117,19 @@ class HMM
 
 			//get sum of all edges
 			int sum_edge_probs = 0;
-			for(Integer e_key: state.outgoing.keySet()){
-				HMMEdge edge = state.outgoing.get(e_key);
+			for(Integer e_key: state.outgoingm.keySet()){
+				HMMEdge edge = state.outgoingm.get(e_key);
 				sum_edge_probs += (int)edge.probability;
 			}
 
 			//normalize edges
-			for(Integer e_key: state.outgoing.keySet()){
-				HMMEdge edge = state.outgoing.get(e_key);
+			for(Integer e_key: state.outgoingm.keySet()){
+				HMMEdge edge = state.outgoingm.get(e_key);
 				edge.probability /= sum_edge_probs;
 			}
 		}
 		
+		//finished training, now generate static data		
 		//set index for each state
 		for (int tag = 0; tag < taglist.length; tag++) {
 			HMMState currState = graph.get(taglist[tag]);
@@ -156,10 +151,20 @@ class HMM
 			}
 			currState.seenTokens = emittedTokens;
 			currState.seenTokenEmissionProbabilities = emissionProbs;
+						
+			//create outgoing arrays
+			Integer[] keys = (Integer[])currState.outgoingm.keySet().toArray(new Integer[0]);
+			Arrays.sort(keys);
+
+			currState.outgoing = new HMMEdge[keys.length];
+			currState.outgoingTags = new int[keys.length];
+			for (int edgeIndex = 0; edgeIndex < currState.outgoingm.size(); edgeIndex++){
+				currState.outgoing[edgeIndex] = currState.outgoingm.get(keys[edgeIndex]);
+				currState.outgoingTags[edgeIndex] = keys[edgeIndex];
+			}				
 		}
 		
-		//create arrays from graph
-		//stateTags = (String[]) graph.keySet().toArray(new String[graph.keySet().size()]);
+		//create array from graph
 		for(int tag = 0; tag < taglist.length; tag++){
 			statelist[tag] = graph.get(taglist[tag]);
 		}
@@ -242,11 +247,13 @@ class HMM
 				for(int previousStateIndex = 0; previousStateIndex < numStates; previousStateIndex++)
 				{
 					HMMState prevState = statelist[previousStateIndex];
-					HMMEdge edge = prevState.outgoing.get(currState.tagindex);
+					int outgoingIndex = Arrays.binarySearch(prevState.outgoingTags, currState.tagindex);
+					
 					// TODO: should not occur, when smoothing was applied after learning
-					if(edge == null)
+					if(outgoingIndex < 0)
 						transitionProb = 0.0;
 					else {
+						HMMEdge edge = prevState.outgoing[outgoingIndex];
 						transitionProb = edge.probability;
 					}
 					// TODO: should not occur, when smoothing was applied after learning
@@ -315,12 +322,15 @@ class HMM
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
 				HMMState currState = statelist[currStateIndex];
-				HMMEdge edge = currState.outgoing.get(maxState.tagindex);
+				int outgoingIndex = Arrays.binarySearch(currState.outgoingTags, currState.tagindex);
+
 				Double transitionProb;
-				if(edge == null)
+				if(outgoingIndex < 0){
 					transitionProb = 0.0;
-				else
+				} else {
+					HMMEdge edge = currState.outgoing[outgoingIndex];
 					transitionProb = edge.probability;
+				}
 				// TODO: should not occur, when smoothing was applied after learning
 				if(transitionProb == null || transitionProb == 0.0)
 					transitionProb = missingEdgeTransitionProbability;
@@ -376,9 +386,8 @@ class HMM
 		for(int i = 0; i < graphKeysOrdered.length; i++)
 		{
 			HMMState state = statelist[i];
-			for(Integer toState: state.outgoing.keySet())
-			{
-				HMMEdge edge = state.outgoing.get(toState);
+			for(int toState = 0; toState < state.outgoing.length; toState++) {
+				HMMEdge edge = state.outgoing[toState];
 				if(edge == null)
 					continue;
 				Double weight = edge.probability;
