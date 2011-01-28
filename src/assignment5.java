@@ -13,46 +13,10 @@ import java.util.regex.Pattern;
 
 class assignment5
 {
-	static int ngram_length = 2;
+	static int ngram_length = 1;
 	
 	public static void main(String[] args) throws IOException
-	{
-		/*
-		Pattern p = Pattern.compile("(\\S+)/([^\\-/\\s]+)(-[^/\\s]+)?\\s");
-		Matcher m = p.matcher("token/np ");
-		System.out.println(m.find());
-		System.out.println(m.group(1)+ "#" + m.group(2) + "#" + m.group(3));
-		*/
-		
-		/*
-		HMM hmm2 = new HMM();
-		int numTokens = 12;
-		String[] tokens = new String[numTokens];
-		String[] tags = new String[numTokens];
-		for(int i=0; i+3< numTokens; i+=4)
-		{
-			tokens[i] = "a";
-			tokens[i+1] = "a";
-			tokens[i+2] = "b";
-			tokens[i+3] = "b";
-			
-			tags[i] = "s1";
-			tags[i+1] = "s1";
-			tags[i+2] = "s2";
-			tags[i+3] = "s2";
-		}
-		//String[] tokens = {"a", "a", "a", "b", "b", "b", "a"};
-		Vector<String> tokensVector = new Vector<String>(Arrays.asList(tokens));
-		Vector<String> tagsVector = new Vector<String>(Arrays.asList(tags));
-		//String[] tags = {"s1", "s1", "s1", "s2", "s2", "s2", "s1"};
-		hmm2.train(tokensVector, tagsVector);
-		hmm2.printGraph();
-		Vector<String> tagsDecoded = hmm2.decode(tokensVector);
-		System.out.println("done");
-		System.out.println(tagsVector);
-		System.out.println(tagsDecoded);
-		*/
-		
+	{		
 		File dir = new File(args[1]);
 		if(!dir.isDirectory())
 		{
@@ -71,8 +35,8 @@ class assignment5
 		System.out.println("training...");
 		hmm3.train(tokens, tags);
 		
-		System.out.println("decoding:");
-		String[] testTokens = {"Check", "this" , "shit", "out", "to" ,"test", "our", "model", "."};
+		System.out.println("decoding...");
+		String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", "."};
 
 		long startTime = System.currentTimeMillis();
 		Vector<String> testTags = hmm3.decode(new Vector<String>(Arrays.asList(testTokens)));
@@ -85,7 +49,7 @@ class assignment5
 		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
 
 		
-		if(true) return;
+		//if(true) return;
 		
 		if(args[0].equals("learn"))
 		{
@@ -111,7 +75,6 @@ class assignment5
 				stdev = Math.sqrt(stdev/10.0);
 				System.out.println("Average accuracy " + mean + ", standard deviation " + stdev);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

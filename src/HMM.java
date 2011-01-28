@@ -28,8 +28,7 @@ class HMM
 	public void train(Vector<String> tokens, Vector<String> tags)
 	{
 		// TODO: smoothing
-		//System.out.println("training");
-				
+			
 		//create state graph from given data
 		int ngram_length = assignment5.ngram_length;
 		HMMState lastState = null;
@@ -202,19 +201,7 @@ class HMM
 				prob = missingTokenEmissionProbability;
 			else
 				prob = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
-			/*Double prob = graph.get(graphKeysOrdered[currStateIndex])
-							.probabilities.get(ngrams.tokens.get(0));
-			// TODO: should not occur if smoothing was applied after learning
-			if(prob == null || prob == 0.0)
-			{
-				prob = missingTokenEmissionProbability;
-			}
-			else
-			{
-				System.out.println("col 0, EmissionFound: log(" + prob + ") in state " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngrams.tokens.get(0));
-				prob = Math.log(prob);
-			}
-			*/
+	
 			viterbi[currStateIndex][0] = prob;
 		}
 		
@@ -230,26 +217,16 @@ class HMM
 						currState.seenTokens,
 						assignment5.join(ngram_tokens, " ")
 						);
+				
 				double probEmission;
 				if(emissionTokenIndex < 0)
 					probEmission = missingTokenEmissionProbability;
 				else
 				{
 					probEmission = Math.log(currState.seenTokenEmissionProbabilities[emissionTokenIndex]);
-					System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens);
+					//System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens);
 				}
 				
-				/*
-				Double probEmission = currState.probabilities.get(ngram_tokens);
-				// TODO: should not occur, when smoothing was applied after learning
-				if(probEmission == null || probEmission == 0.0)
-					probEmission = missingTokenEmissionProbability;
-				else
-				{
-					System.out.println("col "+ngramIndex+", EmissionFound: log(" + probEmission + ") in state #"+currStateIndex+" " + graphKeysOrdered[currStateIndex] + ", for tokens " + ngram_tokens);
-					probEmission = Math.log(probEmission);
-				}
-				*/
 				double maxProb = -Double.MAX_VALUE;
 				// determine maximum probability to reach currState (from any previous state)
 				double transitionProb;
@@ -260,18 +237,12 @@ class HMM
 					
 					// TODO: should not occur, when smoothing was applied after learning
 					if(outgoingIndex < 0)
-						transitionProb = 0.0;
+						transitionProb = missingEdgeTransitionProbability;
 					else {
 						HMMEdge edge = prevState.outgoing[outgoingIndex];
-						transitionProb = edge.probability;
+						transitionProb = Math.log(edge.probability);
 					}
-					// TODO: should not occur, when smoothing was applied after learning
-					if(transitionProb == 0.0)
-						transitionProb = missingEdgeTransitionProbability;
-					else
-					{
-						transitionProb = Math.log(transitionProb);
-					}
+
 					double prob = viterbi[previousStateIndex][ngramIndex-1] + transitionProb;
 					if(prob > maxProb)
 						maxProb = prob;
@@ -306,26 +277,18 @@ class HMM
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex+1);	// from "next" timestep
 			//Double probEmission = maxState.probabilities.get(ngram_tokens);
 			
-			// TODO outsource ... or replace with hashing
 			int emissionTokenIndex = Arrays.binarySearch(
 					maxState.seenTokens,
 					assignment5.join(ngram_tokens, " ")
 					);
 			double probEmission;
+			
 			if(emissionTokenIndex < 0){
 				probEmission = missingTokenEmissionProbability;
 			} else {
 				probEmission = Math.log(maxState.seenTokenEmissionProbabilities[emissionTokenIndex]);
 			}
-			
-			/*
-			if(probEmission == null || probEmission == 0.0)
-				probEmission = missingTokenEmissionProbability;
-			else
-			{
-				probEmission = Math.log(probEmission);
-			}
-			*/
+
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
@@ -334,16 +297,12 @@ class HMM
 
 				Double transitionProb;
 				if(outgoingIndex < 0){
-					transitionProb = 0.0;
+					transitionProb = missingEdgeTransitionProbability;
 				} else {
 					HMMEdge edge = currState.outgoing[outgoingIndex];
-					transitionProb = edge.probability;
+					transitionProb = Math.log(edge.probability);
 				}
-				// TODO: should not occur, when smoothing was applied after learning
-				if(transitionProb == null || transitionProb == 0.0)
-					transitionProb = missingEdgeTransitionProbability;
-				else
-					transitionProb = Math.log(transitionProb);
+				
 				double prob = viterbi[currStateIndex][ngramIndex] + transitionProb + probEmission;
 				// check if found
 				if(prob == max)
@@ -438,7 +397,7 @@ class HMM
 				if(ngramTags != null)
 					ngramTags.add(tags.get(i+j));
 			}
-			//TODO: maybe stop adding to ngram if senetence end?
+			//TODO: maybe stop adding to ngram if senetence ends?
 			ret.tokens.add(ngramTokens);
 			if(ngramTags != null)
 				ret.tags.add(ngramTags);
