@@ -4,7 +4,7 @@ import java.util.Vector;
 public class HMMState
 {
 	Vector<String> tags;
-	HashMap<Integer, HMMEdge> outgoingm;  //for training code
+	HashMap<Integer, HMMEdge> outgoing_map;  //for training code
 	HashMap<Vector<String>, Double> probabilities;
 	
 	//duplicate primitives for quicker decoding 
@@ -12,10 +12,10 @@ public class HMMState
 	double[] seenTokenEmissionProbabilities;
 	int tagindex;
 	HMMEdge[] outgoing;
-	int[] outgoingTags;
+	int[] outgoingIndexByTagIndex;
 	
 	public HMMState(){
-		outgoingm = new HashMap<Integer, HMMEdge>();
+		outgoing_map = new HashMap<Integer, HMMEdge>();
 		probabilities = new HashMap<Vector<String>, Double>();
 		tags = new Vector<String>();
 		tagindex = -1;
