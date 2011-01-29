@@ -36,7 +36,7 @@ class CrossValidator
 		// permutatedIndices are now randomly permuted
 		// 10 fold cross validation => use last 10% for testing
 		int lastTrainIndex = (int)Math.round(0.9*(numFiles-1));
-		System.out.println(lastTrainIndex);
+		//System.out.println(lastTrainIndex);
 		for(int trainIndex = 0; trainIndex <= lastTrainIndex; trainIndex++)
 		{
 			trainFolds.add(readFileAsString(annotatedFiles[permutatedIndices.get(trainIndex)]));

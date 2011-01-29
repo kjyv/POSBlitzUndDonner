@@ -1,9 +1,12 @@
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class HMMState
+public class HMMState implements Serializable
 {
-	Vector<String> tags;
+	private static final long serialVersionUID = -6545044048487657632L;
+	String[] tags;
+	String firstTag;
 	HashMap<Integer, HMMEdge> outgoing_map;  //for training code
 	HashMap<Vector<String>, Double> probabilities;
 	
@@ -17,7 +20,6 @@ public class HMMState
 	public HMMState(){
 		outgoing_map = new HashMap<Integer, HMMEdge>();
 		probabilities = new HashMap<Vector<String>, Double>();
-		tags = new Vector<String>();
 		tagindex = -1;
 	}
 }
