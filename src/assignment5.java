@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +17,7 @@ class assignment5
 	static int ngram_length = 2;
 	
 	public static void main(String[] args) throws IOException
-	{		
+	{
 		File dir = new File(args[1]);
 		if(!dir.isDirectory())
 		{

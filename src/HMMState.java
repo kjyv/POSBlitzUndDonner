@@ -9,10 +9,10 @@ public class HMMState
 	
 	//duplicate primitives for quicker decoding 
 	String[] seenTokens;
-	double[] seenTokenEmissionProbabilities;
+	float[] seenTokenEmissionProbabilities;
 	int tagindex;
-	HMMEdge[] outgoing;
-	int[] outgoingIndexByTagIndex;
+	//HMMEdge[] outgoing;
+	//int[] outgoingIndexByTagIndex;
 	
 	public HMMState(){
 		outgoing_map = new HashMap<Integer, HMMEdge>();
