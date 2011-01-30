@@ -10,7 +10,7 @@ import java.util.Vector;
 class assignment5
 {
 	static int ngram_length = 1;
-	static int ending_length = 4;
+	static int ending_length = 3;
 	static String serializedModelFileName = "HMM_POS_brown.dat";
 	
 	public static void main(String[] args) throws IOException

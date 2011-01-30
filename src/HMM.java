@@ -17,8 +17,8 @@ class HMM
 
 	HMMState[] statelist;
 	
-	final float missingTokenEmissionProbability = -10.0f;
-	final float missingEdgeTransitionProbability = -10.0f;
+	final float missingTokenEmissionProbability = -20.0f;
+	final float missingEdgeTransitionProbability = -20.0f;
 	
 	public HMM(){}
 	
@@ -50,7 +50,7 @@ class HMM
 		for(int ngramIndex=0; ngramIndex<ngrams.tags.size(); ngramIndex++)
 		{
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex);
-			Vector<String> ngram_end_tokens = ngrams.endTokens.get(ngramIndex);
+			//Vector<String> ngram_end_tokens = ngrams.endTokens.get(ngramIndex);
 			Vector<String> ngram_tags = ngrams.tags.get(ngramIndex);
 			String ngram_tags_joined = assignment5.join(ngram_tags, " ");
 			HMMState state = graph.get(ngram_tags_joined);
@@ -75,13 +75,15 @@ class HMM
 				state.probabilities.put(new Vector<String>(ngram_tokens), 1.0);
 			}
 
-			//add probabilities for endings
-			Double endProb = state.ending_probabilities.get(ngram_end_tokens);
-			if(endProb != null){
-				state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), endProb+1);
-			} else {
-				state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), 1.0);
-			}
+			/*if(!ngram_end_tokens.firstElement().equals(" ")){
+				//add probabilities for endings
+				Double endProb = state.ending_probabilities.get(ngram_end_tokens);
+				if(endProb != null){
+					state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), endProb+1);
+				} else {
+					state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), 1.0);
+				}
+			}*/
 			
 			//add or update edge to this state
 			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
@@ -117,7 +119,7 @@ class HMM
 				state.probabilities.put(p_key, p);
 			}
 			
-			total_emissions = 0;
+			/*total_emissions = 0;
 			//get number of emissions
 			for (Vector<String> p_key : state.ending_probabilities.keySet()){
 				Double p = state.ending_probabilities.get(p_key);
@@ -130,7 +132,8 @@ class HMM
 				p /= total_emissions;
 				p = Math.log(p);
 				state.ending_probabilities.put(p_key, p);
-			}
+			}*/			
+
 
 			//get sum of all edges
 			int sum_edge_probs = 0;
@@ -178,8 +181,8 @@ class HMM
 			currState.seenTokenEmissionProbabilities = emissionProbs;
 			currState.probabilities = null;
 			
-			//again for endings
-			String[] emittedEndTokens = new String[currState.ending_probabilities.size()];
+			// again for endings
+			/*String[] emittedEndTokens = new String[currState.ending_probabilities.size()];
 			float[] emissionEndProbs = new float[emittedEndTokens.length];
 			
 			counter = 0;
@@ -199,7 +202,7 @@ class HMM
 			currState.seenEndTokens = emittedEndTokens;
 			currState.seenEndTokenEmissionProbabilities = emissionEndProbs;
 			currState.ending_probabilities = null;
-			
+			*/
 			
 		}
 
@@ -252,6 +255,7 @@ class HMM
 				if(emissionTokenIndex < 0){*/
 					probEmission = missingTokenEmissionProbability;
 				/*} else {
+					//System.out.println("Found better prob than missing for: "+ currState.seenEndTokens[emissionTokenIndex]);
 					probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
@@ -280,6 +284,7 @@ class HMM
 					if(emissionTokenIndex < 0){*/
 						probEmission = missingTokenEmissionProbability;
 					/*} else {
+						//System.out.println("Found better prob than missing for: "+ currState.seenEndTokens[emissionTokenIndex]);
 						probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 					}*/
 				} else {
@@ -338,6 +343,7 @@ class HMM
 				if(emissionTokenIndex < 0){*/
 					probEmission = missingTokenEmissionProbability;
 				/*} else {
+					//System.out.println("Found better prob than missing for: "+ maxState.seenEndTokens[emissionTokenIndex]);
 					probEmission = maxState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
@@ -479,12 +485,12 @@ class HMM
 	private static NGrams createOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
 	{
 		NGrams ret = new NGrams(tags != null);
-		Vector<String> ngramTokens = null, ngramEndTokens = null;
+		Vector<String> ngramTokens = null; //, ngramEndTokens = null;
 		Vector<String> ngramTags = null;
 		String[] ngramTokensJoined = new String[tokens.size() - n + 1];
-		String[] ngramEndTokensJoined = new String[tokens.size() - n + 1];
+		/*String[] ngramEndTokensJoined = new String[tokens.size() - n + 1];
 
-		int ending_length = assignment5.ending_length;
+		int ending_length = assignment5.ending_length;*/
 		
 		for(int i=0; i<=tokens.size() - n; i++)
 		{
@@ -504,23 +510,21 @@ class HMM
 				ret.tags.add(ngramTags);
 			
 			//create ending ngram
-			ngramEndTokens = new Vector<String>(n);
+			/*ngramEndTokens = new Vector<String>(n);
 			for(int j = 0; j < n; j++)
 			{
 				String token = tokens.get(i+j);
-				if (token.length() > ending_length*2){
+				if (token.length() >= ending_length*2){
 					ngramEndTokens.add(token.substring(token.length() - ending_length));
 				} else {
-					ngramEndTokens.add(token);
+					ngramEndTokens.add(" ");
 				}
 			}
 			ret.endTokens.add(ngramEndTokens);
-			ngramEndTokensJoined[i] = assignment5.join(ngramEndTokens, " ");
-			if(ngramTags != null)
-				ret.endTags.add(ngramTags);
+			ngramEndTokensJoined[i] = assignment5.join(ngramEndTokens, " ");*/
 		}
 		ret.tokensJoined = ngramTokensJoined;
-		ret.endTokensJoined = ngramEndTokensJoined;
+		//ret.endTokensJoined = ngramEndTokensJoined;
 		return ret;
 	}
 	
