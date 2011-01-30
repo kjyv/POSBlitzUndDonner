@@ -1,20 +1,21 @@
 import java.io.File;
-import java.io.FileOutputStream;
+//import java.io.FileOutputStream;
+//import java.util.Arrays;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
 class assignment5
 {
-	static int ngram_length = 2;
+	static int ngram_length = 1;
+	static int ending_length = 4;
 	static String serializedModelFileName = "HMM_POS_brown.dat";
 	
 	public static void main(String[] args) throws IOException
 	{
-		/*
+/*		
 		File dir1 = new File(args[1]);
 		if(!dir1.isDirectory())
 		{
@@ -41,8 +42,6 @@ class assignment5
 			e1.printStackTrace();
 		}
 		
-		System.out.println("press any key...");
-		System.in.read();
 		System.out.println("decoding...");
 		//String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", ".", "Will", "it", "perform", "well", "?", "I", "really" , "hope", "so", "." ,"We", "do", "not", "only", "have", "to", "be", "accurate", ",", "but", "also" , "quite", "fast", "." ,"Let", "us", "give", "it", "a", "try", "!"};
 		String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", "."};
@@ -58,7 +57,7 @@ class assignment5
 		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
 
 		if(true) return;
-		*/
+*/
 		if(args[0].equals("learn"))
 		{
 			CrossValidator cv;
@@ -82,7 +81,7 @@ class assignment5
 				}
 				stdev = Math.sqrt(stdev/10.0);
 				System.out.println("Average accuracy " + mean + ", standard deviation " + stdev);
-				
+
 				// learn final HMM on entire training set and serialize it
 				HMM hmm = learnModelOnEntireTrainingSet(args[1]);
 				hmm.serialize(serializedModelFileName);

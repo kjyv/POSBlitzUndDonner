@@ -60,7 +60,9 @@ class CrossValidator
 		Parser p = new Parser(trainString.toString());
 		Vector<String> tokens = p.getTokens(), tags = p.getTags();
 		HMM hmm = new HMM();
+		//System.out.println("training...");
 		hmm.train(tokens, tags);
+		//System.out.println("done.");
 		return hmm;
 	}
 	

@@ -47,9 +47,10 @@ class HMM
 		
 		statelist = new HMMState[taglist.length];
 		
-		for(int ngramIndex=0; ngramIndex<ngrams.tokens.size(); ngramIndex++)
+		for(int ngramIndex=0; ngramIndex<ngrams.tags.size(); ngramIndex++)
 		{
 			Vector<String> ngram_tokens = ngrams.tokens.get(ngramIndex);
+			Vector<String> ngram_end_tokens = ngrams.endTokens.get(ngramIndex);
 			Vector<String> ngram_tags = ngrams.tags.get(ngramIndex);
 			String ngram_tags_joined = assignment5.join(ngram_tags, " ");
 			HMMState state = graph.get(ngram_tags_joined);
@@ -66,7 +67,6 @@ class HMM
 
 			//add absolute probability
 			Double prob = state.probabilities.get(ngram_tokens);
-			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			if(prob != null){
 				// prob++ does not work
 				// TODO: see if state.emissionProbabilites is really faster than bin search
@@ -75,7 +75,16 @@ class HMM
 				state.probabilities.put(new Vector<String>(ngram_tokens), 1.0);
 			}
 
+			//add probabilities for endings
+			Double endProb = state.ending_probabilities.get(ngram_end_tokens);
+			if(endProb != null){
+				state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), endProb+1);
+			} else {
+				state.ending_probabilities.put(new Vector<String>(ngram_end_tokens), 1.0);
+			}
+			
 			//add or update edge to this state
+			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			if(lastState != null){
 				HMMEdge edge = lastState.outgoing_map.get(currentStateIndex);
 				if (edge != null){
@@ -107,6 +116,21 @@ class HMM
 				p = Math.log(p);
 				state.probabilities.put(p_key, p);
 			}
+			
+			total_emissions = 0;
+			//get number of emissions
+			for (Vector<String> p_key : state.ending_probabilities.keySet()){
+				Double p = state.ending_probabilities.get(p_key);
+				total_emissions += p.intValue();
+			}
+			//System.out.println("state #" + ngram_tags_joined +  "# has " +total_emissions + " emissions, keysetSize = " + state.probabilities.keySet().size());
+			for (Vector<String> p_key : state.ending_probabilities.keySet()){
+				//System.out.println("iterator: key !" + assignment5.join(p_key, "#")+"!");
+				Double p = state.ending_probabilities.get(p_key);
+				p /= total_emissions;
+				p = Math.log(p);
+				state.ending_probabilities.put(p_key, p);
+			}
 
 			//get sum of all edges
 			int sum_edge_probs = 0;
@@ -124,12 +148,14 @@ class HMM
 		}
 		
 		//finished training, now generate static data		
-		//set index for each state
 		for (int tag = 0; tag < taglist.length; tag++) {
 			//System.out.println(taglist[tag]);
+
+			//set index for each state
 			HMMState currState = graph.get(taglist[tag]);
 			currState.tagindex = tag;
-			//create array from graph
+
+			//create arrays for vectors
 			statelist[tag] = currState;
 			String[] emittedTokens = new String[currState.probabilities.size()];
 			float[] emissionProbs = new float[emittedTokens.length];
@@ -140,6 +166,7 @@ class HMM
 				emittedTokens[counter++] = assignment5.join(emissionEntry.getKey(), " ");
 			}
 			Arrays.sort(emittedTokens);
+			
 			// get emission probabilites in sorted order
 			counter = 0;
 			for(String emittedToken : emittedTokens)
@@ -150,6 +177,30 @@ class HMM
 			currState.seenTokens = emittedTokens;
 			currState.seenTokenEmissionProbabilities = emissionProbs;
 			currState.probabilities = null;
+			
+			//again for endings
+			String[] emittedEndTokens = new String[currState.ending_probabilities.size()];
+			float[] emissionEndProbs = new float[emittedEndTokens.length];
+			
+			counter = 0;
+			for(Entry<Vector<String>, Double> emissionEntry : currState.ending_probabilities.entrySet())
+			{
+				emittedEndTokens[counter++] = assignment5.join(emissionEntry.getKey(), " ");
+			}
+			Arrays.sort(emittedEndTokens);
+			
+			// get emission probabilites in sorted order
+			counter = 0;
+			for(String emittedToken : emittedEndTokens)
+			{
+				Vector<String> vec = new Vector<String>(Arrays.asList(emittedToken.split(" ")));
+				emissionEndProbs[counter++] = currState.ending_probabilities.get(vec).floatValue();
+			}
+			currState.seenEndTokens = emittedEndTokens;
+			currState.seenEndTokenEmissionProbabilities = emissionEndProbs;
+			currState.ending_probabilities = null;
+			
+			
 		}
 
 		// using the state's tag index, fill adjacency matrix to get rid of HMMEdge and HMMState.outgoing
@@ -192,10 +243,20 @@ class HMM
 										ngrams.tokensJoined[0]
 										);
 			float probEmission;
-			if(emissionTokenIndex < 0)
-				probEmission = missingTokenEmissionProbability;
-			else
+			if(emissionTokenIndex < 0){
+				//if we don't have the token itself, try its ending
+				/*emissionTokenIndex = Arrays.binarySearch(
+						currState.seenEndTokens,
+						ngrams.endTokensJoined[0]
+						);
+				if(emissionTokenIndex < 0){*/
+					probEmission = missingTokenEmissionProbability;
+				/*} else {
+					probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
+				}*/
+			} else {
 				probEmission = currState.seenTokenEmissionProbabilities[emissionTokenIndex];
+			}
 			
 			viterbi[0][currStateIndex] = probEmission;
 		}
@@ -211,12 +272,19 @@ class HMM
 				int emissionTokenIndex = Arrays.binarySearch(currState.seenTokens, ngram_tokens_joined);
 
 				float probEmission;
-				if(emissionTokenIndex < 0)
-					probEmission = missingTokenEmissionProbability;
-				else
-				{
+				if(emissionTokenIndex < 0){
+					/*emissionTokenIndex = Arrays.binarySearch(
+							currState.seenEndTokens,
+							ngrams.endTokensJoined[ngramIndex]
+							);
+					if(emissionTokenIndex < 0){*/
+						probEmission = missingTokenEmissionProbability;
+					/*} else {
+						probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
+					}*/
+				} else {
 					probEmission = currState.seenTokenEmissionProbabilities[emissionTokenIndex];
-					//System.out.println("col "+ngramIndex+", EmissionFound: " + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens);
+					//System.out.println("col "+ngramIndex+", EmissionFound: " + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens_joined);
 				}
 				
 				float maxProb = Float.NEGATIVE_INFINITY;
@@ -263,7 +331,15 @@ class HMM
 			
 			float probEmission;
 			if(emissionTokenIndex < 0){
-				probEmission = missingTokenEmissionProbability;
+				/*emissionTokenIndex = Arrays.binarySearch(
+						maxState.seenEndTokens,
+						ngrams.endTokensJoined[ngramIndex+1]
+						);
+				if(emissionTokenIndex < 0){*/
+					probEmission = missingTokenEmissionProbability;
+				/*} else {
+					probEmission = maxState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
+				}*/
 			} else {
 				probEmission = maxState.seenTokenEmissionProbabilities[emissionTokenIndex];
 			}
@@ -403,9 +479,12 @@ class HMM
 	private static NGrams createOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
 	{
 		NGrams ret = new NGrams(tags != null);
-		Vector<String> ngramTokens = null;
+		Vector<String> ngramTokens = null, ngramEndTokens = null;
 		Vector<String> ngramTags = null;
 		String[] ngramTokensJoined = new String[tokens.size() - n + 1];
+		String[] ngramEndTokensJoined = new String[tokens.size() - n + 1];
+
+		int ending_length = assignment5.ending_length;
 		
 		for(int i=0; i<=tokens.size() - n; i++)
 		{
@@ -423,10 +502,28 @@ class HMM
 			ngramTokensJoined[i] = assignment5.join(ngramTokens, " ");
 			if(ngramTags != null)
 				ret.tags.add(ngramTags);
+			
+			//create ending ngram
+			ngramEndTokens = new Vector<String>(n);
+			for(int j = 0; j < n; j++)
+			{
+				String token = tokens.get(i+j);
+				if (token.length() > ending_length*2){
+					ngramEndTokens.add(token.substring(token.length() - ending_length));
+				} else {
+					ngramEndTokens.add(token);
+				}
+			}
+			ret.endTokens.add(ngramEndTokens);
+			ngramEndTokensJoined[i] = assignment5.join(ngramEndTokens, " ");
+			if(ngramTags != null)
+				ret.endTags.add(ngramTags);
 		}
 		ret.tokensJoined = ngramTokensJoined;
+		ret.endTokensJoined = ngramEndTokensJoined;
 		return ret;
 	}
+	
 	/*
 	private void print2dArray(double[][] table)
 	{
