@@ -255,7 +255,6 @@ class HMM
 				if(emissionTokenIndex < 0){*/
 					probEmission = missingTokenEmissionProbability;
 				/*} else {
-					//System.out.println("Found better prob than missing for: "+ currState.seenEndTokens[emissionTokenIndex]);
 					probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
@@ -273,6 +272,9 @@ class HMM
 			{
 				HMMState currState = statelist[currStateIndex];
 				
+				//TODO: maybe create lookup table from this one level up
+				//(we search all states for an ngram for each ngram -
+				//but there will be duplicate ngrams, so we do the same search more than once)
 				int emissionTokenIndex = Arrays.binarySearch(currState.seenTokens, ngram_tokens_joined);
 
 				float probEmission;
@@ -284,7 +286,6 @@ class HMM
 					if(emissionTokenIndex < 0){*/
 						probEmission = missingTokenEmissionProbability;
 					/*} else {
-						//System.out.println("Found better prob than missing for: "+ currState.seenEndTokens[emissionTokenIndex]);
 						probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 					}*/
 				} else {
@@ -343,7 +344,6 @@ class HMM
 				if(emissionTokenIndex < 0){*/
 					probEmission = missingTokenEmissionProbability;
 				/*} else {
-					//System.out.println("Found better prob than missing for: "+ maxState.seenEndTokens[emissionTokenIndex]);
 					probEmission = maxState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
