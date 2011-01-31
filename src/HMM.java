@@ -20,11 +20,6 @@ class HMM
 	final float missingTokenEmissionProbability = -20.0f;
 	final float missingEdgeTransitionProbability = -20.0f;
 	
-	// experimental
-	String[][] seenTokens;							// stateIndex x tokenIndex
-	float[][] seenTokenEmissionProbabilities;		// stateIndex x tokenIndex
-	String[] firstTags;								// stateIndex
-	
 	public HMM(){}
 	
 	public HMM(String serializedFile) throws IOException, ClassNotFoundException
@@ -51,9 +46,6 @@ class HMM
 		//Arrays.sort(taglist); // TreeSet sorts automatically when adding an element
 		
 		statelist = new HMMState[taglist.length];
-		seenTokens = new String[taglist.length][];
-		seenTokenEmissionProbabilities = new float[taglist.length][];
-		firstTags = new String[taglist.length];
 		
 		for(int ngramIndex=0; ngramIndex<ngrams.tags.size(); ngramIndex++)
 		{
@@ -61,7 +53,6 @@ class HMM
 			//Vector<String> ngram_end_tokens = ngrams.endTokens.get(ngramIndex);
 			Vector<String> ngram_tags = ngrams.tags.get(ngramIndex);
 			String ngram_tags_joined = assignment5.join(ngram_tags, " ");
-			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			HMMState state = graph.get(ngram_tags_joined);
 			
 			if(state == null) {
@@ -69,7 +60,7 @@ class HMM
 				state = new HMMState();
 				state.tags = ngram_tags.toArray(new String[0]);
 				state.firstTag = ngram_tags.get(0);
-				firstTags[currentStateIndex] = state.firstTag;
+
 				//state.probabilities = new HashMap<Vector<String>, Double>();	// already done in construcctor
 				graph.put(ngram_tags_joined, state);
 			}
@@ -95,6 +86,7 @@ class HMM
 			}*/
 			
 			//add or update edge to this state
+			Integer currentStateIndex = Arrays.binarySearch(taglist, ngram_tags_joined); 
 			if(lastState != null){
 				HMMEdge edge = lastState.outgoing_map.get(currentStateIndex);
 				if (edge != null){
@@ -164,14 +156,11 @@ class HMM
 
 			//set index for each state
 			HMMState currState = graph.get(taglist[tag]);
-			//currState.tagindex = tag;
+			currState.tagindex = tag;
 
 			//create arrays for vectors
 			statelist[tag] = currState;
 			String[] emittedTokens = new String[currState.probabilities.size()];
-			seenTokens[tag] = new String[emittedTokens.length];
-			seenTokenEmissionProbabilities[tag] = new float[emittedTokens.length];
-			
 			float[] emissionProbs = new float[emittedTokens.length];
 			
 			int counter = 0;
@@ -180,7 +169,6 @@ class HMM
 				emittedTokens[counter++] = assignment5.join(emissionEntry.getKey(), " ");
 			}
 			Arrays.sort(emittedTokens);
-			System.arraycopy(emittedTokens, 0, seenTokens[tag], 0, emittedTokens.length);
 			
 			// get emission probabilites in sorted order
 			counter = 0;
@@ -189,9 +177,6 @@ class HMM
 				Vector<String> vec = new Vector<String>(Arrays.asList(emittedToken.split(" ")));
 				emissionProbs[counter++] = currState.probabilities.get(vec).floatValue();
 			}
-			seenTokenEmissionProbabilities[tag] = new float[emissionProbs.length];
-			System.arraycopy(emissionProbs, 0, seenTokenEmissionProbabilities[tag], 0, emissionProbs.length);
-			
 			currState.seenTokens = emittedTokens;
 			currState.seenTokenEmissionProbabilities = emissionProbs;
 			currState.probabilities = null;
@@ -254,9 +239,10 @@ class HMM
 		// first column (ngram): no transition probabilities, no previous probabilites => only emission probs
 		for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 		{
-			//HMMState currState = statelist[currStateIndex];
+			HMMState currState = statelist[currStateIndex];
+
 			int emissionTokenIndex = Arrays.binarySearch(
-										seenTokens[currStateIndex],//currState.seenTokens,
+										currState.seenTokens,
 										ngrams.tokensJoined[0]
 										);
 			float probEmission;
@@ -272,7 +258,7 @@ class HMM
 					probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
-				probEmission = seenTokenEmissionProbabilities[currStateIndex][emissionTokenIndex];//currState.seenTokenEmissionProbabilities[emissionTokenIndex];
+				probEmission = currState.seenTokenEmissionProbabilities[emissionTokenIndex];
 			}
 			
 			viterbi[0][currStateIndex] = probEmission;
@@ -284,13 +270,12 @@ class HMM
 			String ngram_tokens_joined = ngrams.tokensJoined[ngramIndex];
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
-				//HMMState currState = statelist[currStateIndex];
+				HMMState currState = statelist[currStateIndex];
 				
 				//TODO: maybe create lookup table from this one level up
 				//(we search all states for an ngram for each ngram -
 				//but there will be duplicate ngrams, so we do the same search more than once)
-				//int emissionTokenIndex = Arrays.binarySearch(currState.seenTokens, ngram_tokens_joined);
-				int emissionTokenIndex = Arrays.binarySearch(seenTokens[currStateIndex], ngram_tokens_joined);
+				int emissionTokenIndex = Arrays.binarySearch(currState.seenTokens, ngram_tokens_joined);
 
 				float probEmission;
 				if(emissionTokenIndex < 0){
@@ -304,7 +289,7 @@ class HMM
 						probEmission = currState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 					}*/
 				} else {
-					probEmission = seenTokenEmissionProbabilities[currStateIndex][emissionTokenIndex];//currState.seenTokenEmissionProbabilities[emissionTokenIndex];
+					probEmission = currState.seenTokenEmissionProbabilities[emissionTokenIndex];
 					//System.out.println("col "+ngramIndex+", EmissionFound: " + probEmission + ") in state #"+currStateIndex+" " + taglist[currStateIndex] + ", for tokens " + ngram_tokens_joined);
 				}
 				
@@ -345,11 +330,10 @@ class HMM
 		for(int ngramIndex=numNGrams-2; ngramIndex>=0; ngramIndex--)	// go backwards in time
 		{
 			//System.out.println("decoding: backtracking: column " + ngramIndex);
-			//HMMState maxState = statelist[maxStateIndex];
+			HMMState maxState = statelist[maxStateIndex];
 			String ngram_tokens_joined = ngrams.tokensJoined[ngramIndex+1];	// from "next" timestep
 
-			//int emissionTokenIndex = Arrays.binarySearch(maxState.seenTokens, ngram_tokens_joined);
-			int emissionTokenIndex = Arrays.binarySearch(seenTokens[maxStateIndex], ngram_tokens_joined);
+			int emissionTokenIndex = Arrays.binarySearch(maxState.seenTokens, ngram_tokens_joined);
 			
 			float probEmission;
 			if(emissionTokenIndex < 0){
@@ -363,19 +347,19 @@ class HMM
 					probEmission = maxState.seenEndTokenEmissionProbabilities[emissionTokenIndex];
 				}*/
 			} else {
-				probEmission = seenTokenEmissionProbabilities[maxStateIndex][emissionTokenIndex];//maxState.seenTokenEmissionProbabilities[emissionTokenIndex];
+				probEmission = maxState.seenTokenEmissionProbabilities[emissionTokenIndex];
 			}
 			
 			// loop all states and find the one that transitioned to maxState
 			for(int currStateIndex = 0; currStateIndex < numStates; currStateIndex++)
 			{
-				//HMMState currState = statelist[currStateIndex];
+				HMMState currState = statelist[currStateIndex];
 				float prob = viterbi[ngramIndex][currStateIndex] + adjacencyMatrix[currStateIndex][maxStateIndex] + probEmission;
 				// check if found
 				if(prob == max)
 				{
 					// add this state's tags to output list and set this state as next "maxState"
-					tags.add(0, firstTags[currStateIndex]);//currState.firstTag);	// only get first tag, because tags are overlapping
+					tags.add(0, currState.firstTag);	// only get first tag, because tags are overlapping
 					max = viterbi[ngramIndex][currStateIndex];
 					maxStateIndex = currStateIndex;
 					break;
@@ -395,49 +379,6 @@ class HMM
 		return new Vector<String>(tags);
 	}
 	
-	public int charBinarySearch(char[][] a, char[] key)
-	{
-		int low = 0;
-		int high = a.length - 1;
-		int mid;
-		int cmp = 0; // local char[] to char[] comparison result
-		int keyLength = key.length;
-		int currALength = 0;
-		boolean didNotBreak = false;
-
-		while (low <= high)
-		{
-			mid = (low + high) / 2;
-			char[] currA = a[mid];
-			currALength = currA.length;
-			int minLength = (currALength < keyLength ? currALength : keyLength );
-			for (int charIndex = 0; charIndex < minLength; charIndex++)
-			{
-				didNotBreak = false;
-				cmp = currA[charIndex] - key[charIndex];
-				if (cmp < 0)
-				{
-					low = mid + 1;
-					break;
-				}
-				else if (cmp > 0)
-				{
-					high = mid - 1;
-					break;
-				}
-				didNotBreak = true;
-			}
-			if(didNotBreak)
-			{
-				if(currALength == keyLength)
-					return mid;
-				else
-					return -1;
-			}
-		}
-		return -1;
-	}
-	
 	// chunks tokens and tags to groups of n. tags can be null, if no tags exist
 	public NGrams createNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
 	{
@@ -453,9 +394,6 @@ class HMM
 		out.writeObject(taglist);
 		out.writeObject(adjacencyMatrix);
 		out.writeObject(statelist);
-		out.writeObject(seenTokens);
-		out.writeObject(seenTokenEmissionProbabilities);
-		out.writeObject(firstTags);
 		fout.close();
 		System.out.println("done.");
 	}
@@ -469,12 +407,80 @@ class HMM
 		taglist = (String[])in.readObject();
 		adjacencyMatrix = (float[][])in.readObject();
 		statelist = (HMMState[])in.readObject();
-		seenTokens = (String[][])in.readObject();
-		seenTokenEmissionProbabilities = (float[][])in.readObject();
-		firstTags = (String[])in.readObject();
 		fin.close();
 		System.out.println("done.");
 	}
+	
+	/*
+	public void printGraph()
+	{
+		if(statelist == null || statelist.length==0)
+		{
+			System.out.println("[HMM is empty]");
+			return;
+		}
+
+		for(String key:taglist) System.out.println(key);
+		// adjacency matrix
+		double[][] adj = new double[taglist.length][taglist.length];
+		for(int i = 0; i < taglist.length; i++)
+		{
+			HMMState state = statelist[i];
+			for(int toState = 0; toState < state.outgoing.length; toState++) {
+				int outgoingIndex = Arrays.binarySearch(state.outgoingIndexByTagIndex, toState);
+				if(outgoingIndex < 0)
+					continue;
+				HMMEdge edge = state.outgoing[outgoingIndex];
+				Double weight = new Double(edge.probability);
+				String toStateString = taglist[toState];
+				// look for index j in graphKeysOrdered with graphKeysOrdered[j].equals(toStateStr)
+				int toStateIndex = -1;
+				for(int j = 0; j < taglist.length; j++)
+				{
+					if(taglist[j].equals(toStateString))
+					{
+						toStateIndex = j;
+						break;
+					}
+				}
+				adj[i][toStateIndex] = weight;
+			}
+		}
+		print2dArray(adj);
+	}
+	*/
+	
+	/*
+	private NGrams createNonOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
+	{
+		NGrams ret = new NGrams(tags != null);
+		Vector<String> ngramTokens = null;
+		Vector<String> ngramTags = null;
+		
+		for(int i=0; i<tokens.size(); i+=n)
+		{
+			// create current ngram
+			ngramTokens = new Vector<String>(n);
+			if(tags != null)
+				ngramTags = new Vector<String>(n);
+			int startOffset = 0;	// offset to the left, if i+nGramLength would be out of range (end of token list)
+			if(i+n-1 >= tokens.size())
+				startOffset = tokens.size() - i - n;	// is negative
+			//System.out.println("i: " + i + "  startOffset: " + startOffset);
+			for(int j = startOffset; j < n+startOffset; j++)
+			{
+				ngramTokens.add(tokens.get(i+j));
+				if(ngramTags != null)
+					ngramTags.add(tags.get(i+j));
+			}
+			//TODO: maybe stop adding to ngram if senetence ends?
+			ret.tokens.add(ngramTokens);
+			if(ngramTags != null)
+				ret.tags.add(ngramTags);
+		}
+		return ret;
+	}
+	*/
 	
 	private static NGrams createOverlappingNGramsFromTokens(Vector<String> tokens, Vector<String> tags, int n)
 	{

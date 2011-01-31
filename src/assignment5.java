@@ -3,7 +3,6 @@ import java.io.File;
 //import java.util.Arrays;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
@@ -16,7 +15,7 @@ class assignment5
 	
 	public static void main(String[] args) throws IOException
 	{
-		/*
+/*		
 		File dir1 = new File(args[1]);
 		if(!dir1.isDirectory())
 		{
@@ -28,28 +27,24 @@ class assignment5
 			File f = annotatedFiles[i];
 			trainString.append(CrossValidator.readFileAsString(f));
 		}
-		Parser p_ = new Parser(trainString.toString());
-		Vector<String> tokens_ = p_.getTokens();
-		Vector<String> tags_ = p_.getTags();
+		Parser p = new Parser(trainString.toString());
+		Vector<String> tokens = p.getTokens();
+		Vector<String> tags = p.getTags();
 		HMM hmm3 = new HMM();
-		try {
-			//hmm3 = new HMM(serializedModelFileName);
-		
-		
 		System.out.println("training...");
-		hmm3.train(tokens_, tags_);
+		hmm3.train(tokens, tags);
 		
 		try {
 			String outFile = "HMM_POS_brown.dat";
-			//hmm3.serialize(outFile);
+			hmm3.serialize(outFile);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
 		System.out.println("decoding...");
-		String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", ".", "Will", "it", "perform", "well", "?", "I", "really" , "hope", "so", "." ,"We", "do", "not", "only", "have", "to", "be", "accurate", ",", "but", "also" , "quite", "fast", "." ,"Let", "us", "give", "it", "a", "try", "!"};
-		//String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", "."};
+		//String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", ".", "Will", "it", "perform", "well", "?", "I", "really" , "hope", "so", "." ,"We", "do", "not", "only", "have", "to", "be", "accurate", ",", "but", "also" , "quite", "fast", "." ,"Let", "us", "give", "it", "a", "try", "!"};
+		String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", "."};
 
 		long startTime = System.currentTimeMillis();
 		Vector<String> testTags = hmm3.decode(new Vector<String>(Arrays.asList(testTokens)));
@@ -60,12 +55,9 @@ class assignment5
 		
 		System.out.println("done, decode took:");
 		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
+
 		if(true) return;
-		*/
+*/
 		if(args[0].equals("learn"))
 		{
 			CrossValidator cv;
@@ -99,7 +91,6 @@ class assignment5
 		}
 		else if(args[0].equals("annotate"))
 		{
-			long startTime = System.currentTimeMillis();
 			try {
 				HMM hmm = new HMM(serializedModelFileName);
 				
@@ -134,7 +125,6 @@ class assignment5
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			System.out.println("this took " + (System.currentTimeMillis() - startTime) + " ms");
 		}
 	}
 	
