@@ -15,49 +15,6 @@ class assignment5
 	
 	public static void main(String[] args) throws IOException
 	{
-/*		
-		File dir1 = new File(args[1]);
-		if(!dir1.isDirectory())
-		{
-			throw new IllegalArgumentException("path is not a directory");
-		}
-		File[] annotatedFiles = dir1.listFiles();
-		StringBuilder trainString = new StringBuilder();
-		for (int i = 0; i < annotatedFiles.length; i++) {
-			File f = annotatedFiles[i];
-			trainString.append(CrossValidator.readFileAsString(f));
-		}
-		Parser p = new Parser(trainString.toString());
-		Vector<String> tokens = p.getTokens();
-		Vector<String> tags = p.getTags();
-		HMM hmm3 = new HMM();
-		System.out.println("training...");
-		hmm3.train(tokens, tags);
-		
-		try {
-			String outFile = "HMM_POS_brown.dat";
-			hmm3.serialize(outFile);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		System.out.println("decoding...");
-		//String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", ".", "Will", "it", "perform", "well", "?", "I", "really" , "hope", "so", "." ,"We", "do", "not", "only", "have", "to", "be", "accurate", ",", "but", "also" , "quite", "fast", "." ,"Let", "us", "give", "it", "a", "try", "!"};
-		String[] testTokens = {"This", "is" , "a", "sentence", "to" ,"test", "our", "model", "."};
-
-		long startTime = System.currentTimeMillis();
-		Vector<String> testTags = hmm3.decode(new Vector<String>(Arrays.asList(testTokens)));
-		System.out.println("decoded tags:");
-		System.out.println(testTags);
-		System.out.println("real tags:");
-		System.out.println("[dt, bez, at, nn, to, vb, pp$, nn, .]");
-		
-		System.out.println("done, decode took:");
-		System.out.println((System.currentTimeMillis() - startTime)/1000.0f + "s");
-
-		if(true) return;
-*/
 		if(args[0].equals("learn"))
 		{
 			CrossValidator cv;
