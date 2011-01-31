@@ -24,6 +24,6 @@ public class HMMState implements Serializable
 		outgoing_map = new HashMap<Integer, HMMEdge>();
 		probabilities = new HashMap<Vector<String>, Double>();
 //		ending_probabilities = new HashMap<Vector<String>, Double>();
-		tagindex = -1;
+		//tagindex = -1;
 	}
 }
