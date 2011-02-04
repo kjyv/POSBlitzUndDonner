@@ -57,14 +57,15 @@ class assignment5
 					throw new IllegalArgumentException(args[1] + " is not a directory");
 				}
 				File[] toBeAnnotatedFiles = dir.listFiles();
-				String[] filesAsString = new String[toBeAnnotatedFiles.length];
+				File f;
+				String fileAsString = new String();
 				NonAnnotatedStringParser p;
 				Vector<String> tokens, tags;
 				StringBuilder outputString = new StringBuilder(30000);	// train files contained about 20000 chars
 				for (int i = 0; i < toBeAnnotatedFiles.length; i++) {
-					File f = toBeAnnotatedFiles[i];
-					filesAsString[i] = CrossValidator.readFileAsString(f);
-					p = new NonAnnotatedStringParser(filesAsString[i]);
+					f = toBeAnnotatedFiles[i];
+					fileAsString = CrossValidator.readFileAsString(f);
+					p = new NonAnnotatedStringParser(fileAsString);
 					tokens = p.getTokens();
 					tags = hmm.decode(tokens);
 					if(tokens.size() != tags.size())
@@ -77,6 +78,7 @@ class assignment5
 					FileWriter fw = new FileWriter(f.getAbsolutePath() + ".pos");
 					fw.write(outputString.toString());
 					fw.close();
+					outputString.setLength(0);
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
